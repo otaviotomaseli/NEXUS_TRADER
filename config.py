@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+if not os.getenv('SECRET_KEY'):
+    load_dotenv('.env.example', override=True)
 
 
 class Config:
