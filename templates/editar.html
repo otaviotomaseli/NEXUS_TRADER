@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar {{ mercado }} — InvTrader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0b0d12;
+            --bg-card: #161922;
+            --bg-input: #1a1d28;
+            --border: #222639;
+            --border-focus: #3b82f6;
+            --text-primary: #e4e7ed;
+            --text-secondary: #7f8397;
+            --accent: #3b82f6;
+            --accent-bg: rgba(59, 130, 246, 0.1);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.1);
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.1);
+            --cyan: #06b6d4;
+            --cyan-bg: rgba(6, 182, 212, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 32px 16px;
+        }
+
+        .container { max-width: 560px; width: 100%; }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 36px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.15s;
+            color-scheme: dark;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: flex; gap: 14px; }
+        .form-row > * { flex: 1; }
+
+        .info-box {
+            background: var(--cyan-bg);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 10px;
+            padding: 14px 18px;
+            font-size: 13px;
+            color: var(--cyan);
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .botoes { display: flex; gap: 12px; margin-top: 28px; }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+        }
+
+        .flash {
+            padding: 14px 18px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .flash-error {
+            background: var(--red-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--red);
+        }
+
+        .bar-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .bar-top .back-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .bar-top .back-link:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="bar-top">
+                <a href="/dashboard" class="back-link">&larr; Voltar ao painel</a>
+            </div>
+            <h1>Editar {{ mercado }}</h1>
+            <p class="subtitle">Altere os campos abaixo e salve as alterações.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, m in messages %}
+                        <div class="flash {% if category == 'error' %}flash-error{% endif %}">{{ m }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ action }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" name="data" value="{{ t.data }}" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select name="tipo">
+                            <option value="acao" {% if t.tipo_ativo == 'acao' %}selected{% endif %}>Ação</option>
+                            <option value="fii" {% if t.tipo_ativo == 'fii' %}selected{% endif %}>FII</option>
+                            <option value="stock" {% if t.tipo_ativo == 'stock' %}selected{% endif %}>Stock</option>
+                            <option value="reit" {% if t.tipo_ativo == 'reit' %}selected{% endif %}>REIT</option>
+                            <option value="cripto" {% if t.tipo_ativo == 'cripto' %}selected{% endif %}>Cripto</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Código</label>
+                        <input type="text" name="codigo" value="{{ t.codigo }}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Operação</label>
+                        <select name="tipo_transacao">
+                            <option value="Compra" {% if t.tipo_transacao == 'Compra' %}selected{% endif %}>Compra</option>
+                            <option value="Venda" {% if t.tipo_transacao == 'Venda' %}selected{% endif %}>Venda</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade</label>
+                        <input type="number" step="0.00000001" name="quantidade" value="{{ t.quantidade }}" required min="0.00000001">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Valor Total</label>
+                    <input type="number" step="0.01" name="valor_total" value="{{ "%.2f"|format(t.valor_total) }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Corretora / Exchange</label>
+                    <input type="text" name="banco" value="{{ t.banco if t.banco is defined and t.banco != 'Não Informado' else '' }}" placeholder="Ex: NuInvest, Binance">
+                </div>
+
+                <div class="info-box">
+                    <strong>Atenção:</strong> Se alterar para <strong>Venda</strong>, o lucro/prejuízo e imposto serão zerados para recalcular automaticamente no Dashboard.
+                </div>
+
+                <div class="botoes">
+                    <a href="/dashboard" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

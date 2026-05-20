@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ titulo }} - InvTrader</title>
+    <style>
+        :root {
+            --bg-body: #0b0c10;
+            --bg-card: #1c1e29;
+            --text-main: #c7c9d3;
+            --text-title: #ffffff;
+            --border-color: #2a2d3d;
+            --neon-cyan: #00e5ff;
+            --neon-red: #ff3366;
+            --neon-green: #00ff66;
+        }
+
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 40px; }
+        
+        .container { max-width: 1100px; margin: 0 auto; background: var(--bg-card); padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--border-color); }
+        
+        .btn-voltar { display: inline-block; margin-bottom: 20px; color: var(--neon-cyan); text-decoration: none; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;}
+        .btn-voltar:hover { text-shadow: 0 0 8px rgba(0, 229, 255, 0.5); }
+        
+        .btn-download { display: inline-block; padding: 14px 30px; background-color: transparent; color: var(--neon-cyan); border: 1px solid var(--neon-cyan); text-decoration: none; font-weight: bold; border-radius: 4px; margin-bottom: 30px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);}
+        .btn-download:hover { background-color: var(--neon-cyan); color: #000; box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+        
+        h1 { color: var(--text-title); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        h2 { color: var(--neon-cyan); font-size: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 40px; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 40px; background-color: var(--bg-body); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        th, td { padding: 15px 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: #232736; color: var(--text-title); text-transform: uppercase; font-size: 12px; letter-spacing: 1px;}
+        
+        .linha-compra { background-color: rgba(0, 255, 102, 0.05); color: #a8b0aa; border-left: 3px solid var(--neon-green); }
+        .linha-venda { background-color: rgba(255, 51, 102, 0.05); color: #a8b0aa; border-left: 3px solid var(--neon-red); }
+        
+        .linha-compra strong { color: var(--neon-green); }
+        .linha-venda strong { color: var(--neon-red); }
+
+        .btn-excluir { background-color: transparent; border: 1px solid var(--neon-red); color: var(--neon-red); text-decoration: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.3s; }
+        .btn-excluir:hover { background-color: var(--neon-red); color: #fff; box-shadow: 0 0 10px rgba(255, 51, 102, 0.5); }
+        
+        .positivo { color: var(--neon-green) !important; font-weight: bold; }
+        .negativo { color: var(--neon-red) !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="/dashboard" class="btn-voltar">&larr; Voltar ao Painel Principal</a>
+        
+        <h1>{{ titulo }}</h1>
+        <p style="margin-bottom: 20px;">Este painel consolida todos os impostos devidos agrupando-os por mês, facilitando a emissão do seu DARF, além de manter o histórico detalhado.</p>
+        
+        <a href="/baixar_ano/{{ ano }}/{{ pais }}" class="btn-download">📥 Gerar PDF do Relatório</a>
+
+        <h2>1. Resumo de Impostos por Mês (Agrupado)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mês de Referência</th>
+                    <th>Lucro / Prejuízo Mensal</th>
+                    <th>Total de Imposto a Pagar</th>
+                    <th>Data Máxima p/ Pagamento</th>
+                    <th>Aviso do Sistema</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in resumos %}
+                <tr>
+                    <td style="color: var(--text-title); font-weight: bold;">{{ r.mes }}</td>
+                    <td class="{% if r.lucro_total >= 0 %}positivo{% else %}negativo{% endif %}">{{ moeda }} {{ "%.2f"|format(r.lucro_total) }}</td>
+                    <td style="color: var(--neon-red); font-weight: bold; font-size: 16px; text-shadow: 0 0 5px rgba(255,51,102,0.4);">{{ moeda }} {{ "%.2f"|format(r.imposto_total) }}</td>
+                    <td style="color: var(--text-title);">{{ r.vencimento }}</td>
+                    <td>
+                        {% if r.imposto_total >= 10 and pais == 'br' %}
+                            <span style="color: var(--neon-red); font-weight: bold; padding: 4px 8px; border: 1px solid var(--neon-red); border-radius: 4px; font-size: 12px;">EMITIR E PAGAR DARF</span>
+                        {% elif r.imposto_total > 0 and r.imposto_total < 10 and pais == 'br' %}
+                            <span style="color: #ffcc00; font-weight: bold; font-size: 12px;">Aguardar acumular {{ moeda }} 10,00</span>
+                        {% elif r.imposto_total > 0 and pais == 'us' %}
+                            <span style="color: var(--neon-cyan); font-weight: bold; padding: 4px 8px; border: 1px solid var(--neon-cyan); border-radius: 4px; font-size: 12px;">PROVISÃO IRPF ANUAL</span>
+                        {% else %}
+                            <span style="color: var(--neon-green); font-weight: bold; font-size: 12px;">Nada a pagar</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not resumos %}
+                <tr><td colspan="5" style="text-align: center; padding: 30px;">Nenhuma venda registrada neste ano para gerar resumo.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <h2>2. Histórico Detalhado (Compras e Vendas)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Operação</th>
+                    <th>Ativo</th>
+                    <th>Tipo</th>
+                    <th>Qtd</th>
+                    <th>Total ({{ moeda }})</th>
+                    <th>Lucro / Prejuízo</th>
+                    <th>Imposto Individual</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transacoes %}
+                <tr class="{% if t.tipo_transacao == 'Compra' %}linha-compra{% else %}linha-venda{% endif %}">
+                    <td>{{ t.data }}</td>
+                    <td><strong>{{ t.tipo_transacao|upper }}</strong></td>
+                    <td><strong style="color: var(--text-title);">{{ t.codigo }}</strong></td>
+                    <td style="color: var(--text-title);">{{ t.tipo_ativo|upper }}</td>
+                    <td>{{ t.quantidade }}</td>
+                    <td>{{ "%.2f"|format(t.valor_total) }}</td>
+                    <td>{% if t.tipo_transacao == 'Venda' %}<span style="color: var(--text-title); font-weight: bold;">{{ "%.2f"|format(t.lucro_perda) }}</span>{% else %}-{% endif %}</td>
+                    
+                    <td>
+                        {% if t.tipo_transacao == 'Venda' %}
+                            <span style="color: var(--text-title);">{{ t.darf }}</span>
+                            {% if t.imposto > 0 %}
+                                <br><small style="color: var(--neon-red); font-weight: bold; font-size: 12px;">{{ moeda }} {{ "%.2f"|format(t.imposto) }}</small>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <a href="/excluir_{{ pais }}/{{ t.id }}" class="btn-excluir" onclick="return confirm('ATENÇÃO: Deseja apagar este lançamento permanentemente?');">Deletar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvTrader — Painel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0b0d12;
+            --bg-sidebar: #101218;
+            --bg-card: #161922;
+            --bg-hover: #1c1f2c;
+            --border: #222639;
+            --text-primary: #e4e7ed;
+            --text-secondary: #7f8397;
+            --text-muted: #494d5e;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-bg: rgba(59, 130, 246, 0.1);
+            --green: #22c55e;
+            --green-bg: rgba(34, 197, 94, 0.12);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.12);
+            --yellow: #eab308;
+            --yellow-bg: rgba(234, 179, 8, 0.12);
+            --purple: #a855f7;
+            --purple-bg: rgba(168, 85, 247, 0.12);
+            --sidebar-width: 250px;
+        }
+
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            font-size: 14px;
+        }
+
+        /* ============ SCROLLBAR ============ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 24px 20px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header .logo {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header .logo-wrapper {
+            perspective: 600px;
+            animation: coinFloat 3s ease-in-out infinite;
+            display: inline-flex;
+        }
+
+        .sidebar-header .logo-coin {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            animation: coinSpin 6s ease-in-out infinite;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-header .logo-coin .coin-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffd700, #b8860b, #8b6914);
+            border: 2px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255,215,0,0.4);
+            box-shadow: 0 0 15px rgba(59,130,246,0.6), inset 0 -3px 6px rgba(0,0,0,0.3);
+            animation: coinGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes coinSpin {
+            0%, 100% { transform: rotateY(-15deg) rotateX(5deg); }
+            25% { transform: rotateY(15deg) rotateX(-5deg); }
+            50% { transform: rotateY(-15deg) rotateX(5deg); }
+            75% { transform: rotateY(15deg) rotateX(-5deg); }
+        }
+
+        @keyframes coinFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes coinGlow {
+            0%, 100% {
+                border-color: #3b82f6;
+                box-shadow: 0 0 15px rgba(59,130,246,0.6), 0 0 30px rgba(59,130,246,0.3), inset 0 -3px 6px rgba(0,0,0,0.3);
+            }
+            20% {
+                border-color: #a855f7;
+                box-shadow: 0 0 15px rgba(168,85,247,0.6), 0 0 30px rgba(168,85,247,0.3), inset 0 -3px 6px rgba(0,0,0,0.3);
+            }
+            40% {
+                border-color: #ec4899;
+                box-shadow: 0 0 15px rgba(236,72,153,0.6), 0 0 30px rgba(236,72,153,0.3), inset 0 -3px 6px rgba(0,0,0,0.3);
+            }
+            60% {
+                border-color: #22c55e;
+                box-shadow: 0 0 15px rgba(34,197,94,0.6), 0 0 30px rgba(34,197,94,0.3), inset 0 -3px 6px rgba(0,0,0,0.3);
+            }
+            80% {
+                border-color: #eab308;
+                box-shadow: 0 0 15px rgba(234,179,8,0.6), 0 0 30px rgba(234,179,8,0.3), inset 0 -3px 6px rgba(0,0,0,0.3);
+            }
+        }
+
+        .user-avatar-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header .brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-header .brand-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 0;
+        }
+
+        .nav-section {
+            padding: 12px 20px 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-muted);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.15s;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent-bg);
+            color: var(--accent);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .nav-item .ico {
+            width: 18px;
+            text-align: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .nav-item .badge {
+            margin-left: auto;
+            background: var(--border);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-footer .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--accent-bg);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .sidebar-footer .user-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .sidebar-footer .user-email {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .btn-logout {
+            display: block;
+            padding: 10px 16px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--red);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            transition: 0.15s;
+        }
+
+        .btn-logout:hover {
+            background: var(--red-bg);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        /* ============ CONTENT ============ */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 40px;
+            min-width: 0;
+        }
+
+        .tab { display: none; }
+        .tab.active { display: block; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ============ TYPOGRAPHY ============ */
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-bottom: 24px;
+            color: #fff;
+        }
+
+        h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-top: 36px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ============ FLASH ============ */
+        .flash {
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .flash-success {
+            background: var(--green-bg);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            color: var(--green);
+        }
+        .flash-error {
+            background: var(--red-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--red);
+        }
+
+        /* ============ CARDS ============ */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: 0.15s;
+        }
+
+        .card:hover {
+            border-color: var(--text-muted);
+        }
+
+        .card h3 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .card .valor {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .card .valor.positivo { color: var(--green); }
+        .card .valor.negativo { color: var(--red); }
+
+        .card.full { grid-column: 1 / -1; }
+
+        .card .sub {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ============ TABLES ============ */
+        .table-wrap {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--bg-card);
+        }
+
+        th {
+            background: var(--bg-sidebar);
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .tr-compra { background: rgba(34, 197, 94, 0.03); border-left: 3px solid var(--green); }
+        .tr-venda { background: rgba(239, 68, 68, 0.03); border-left: 3px solid var(--red); }
+
+        /* ============ FORMS ============ */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-grid .full { grid-column: 1 / -1; }
+
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            max-width: 560px;
+        }
+
+        .form-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input[type="file"] {
+            padding: 8px 10px;
+            font-size: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-right: 8px;
+            font-family: inherit;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.15s;
+            color-scheme: dark;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row > * { flex: 1; }
+
+        .btn {
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 6px;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--red);
+        }
+
+        .btn-danger:hover {
+            background: var(--red-bg);
+        }
+
+        .btn-warning {
+            background: transparent;
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: var(--yellow);
+        }
+
+        .btn-warning:hover {
+            background: var(--yellow-bg);
+        }
+
+        .btn-success {
+            background: transparent;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--green);
+        }
+
+        .btn-success:hover {
+            background: var(--green-bg);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* ============ BADGES ============ */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .tag-red { background: var(--red-bg); color: var(--red); }
+        .tag-green { background: var(--green-bg); color: var(--green); }
+        .tag-blue { background: var(--accent-bg); color: var(--accent); }
+        .tag-yellow { background: var(--yellow-bg); color: var(--yellow); }
+        .tag-purple { background: var(--purple-bg); color: var(--purple); }
+
+        .tag-us {
+            background: var(--purple-bg);
+            color: var(--purple);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        /* ============ STATUS ============ */
+        .status-open { color: var(--green); }
+        .status-closed { color: var(--red); }
+
+        /* ============ VENDA INLINE ============ */
+        .venda-inline {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .venda-inline input,
+        .venda-inline select {
+            width: auto;
+            padding: 6px 8px;
+            font-size: 11px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            max-width: 80px;
+        }
+
+        .venda-inline input[type="date"] { max-width: 100px; }
+
+        /* ============ EDUCATIONAL BLOCK ============ */
+        .info-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 28px;
+        }
+
+        .info-box h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .info-box p, .info-box li {
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-box ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-box ul li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* ============ CARD ASSETS ============ */
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+        }
+
+        .asset-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: 0.15s;
+        }
+
+        .asset-card:hover {
+            border-color: var(--text-muted);
+        }
+
+        .asset-card .ticker {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .asset-card .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .asset-card .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .asset-card .pct {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* ============ CHART ============ */
+        #chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            height: 400px;
+            position: relative;
+        }
+
+        /* ============ TRADER PRO ============ */
+        .trader-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .trader-buttons button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: inherit;
+        }
+
+        .trader-buttons button:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--text-muted);
+        }
+
+        /* ============ LIVE UPDATES ============ */
+        .live-price {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .live-price .coin-card {
+            flex: 1;
+            min-width: 140px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .live-price .coin-card .coin-name {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .live-price .coin-card .coin-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .content { padding: 20px 16px; }
+            .grid-cards { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-row { flex-direction: column; }
+            .asset-grid { grid-template-columns: 1fr 1fr; }
+            .live-price .coin-card { min-width: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ SIDEBAR ============ -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><div class="logo-wrapper"><div class="logo-coin"><div class="coin-inner">N</div></div></div></div>
+            <div>
+                <div class="brand-name">InvTrader</div>
+                <div class="brand-sub">Gestão de Investimentos</div>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section">Brasil (B3)</div>
+            <button class="nav-item active" onclick="abrirAba('dashboard', this)">
+                <span class="ico">&#9679;</span> Dashboard
+            </button>
+            <button class="nav-item" onclick="abrirAba('investir', this)">
+                <span class="ico">+</span> Investir
+            </button>
+            <button class="nav-item" onclick="abrirAba('carteira', this)">
+                <span class="ico">&#9632;</span> Carteira
+            </button>
+
+            <div class="nav-section">Exterior (EUA)</div>
+            <button class="nav-item" onclick="abrirAba('dashboard-us', this)">
+                <span class="ico">&#9679;</span> Dashboard <span class="badge">US$</span>
+            </button>
+            <button class="nav-item" onclick="abrirAba('investir-us', this)">
+                <span class="ico">+</span> Investir <span class="badge">US$</span>
+            </button>
+            <button class="nav-item" onclick="abrirAba('carteira-us', this)">
+                <span class="ico">&#9632;</span> Carteira <span class="badge">US$</span>
+            </button>
+
+            <div class="nav-section">Criptomoedas</div>
+            <button class="nav-item nav-cripto" onclick="abrirAba('dashboard-cripto', this)">
+                <span class="ico">&#9679;</span> Dashboard
+            </button>
+            <button class="nav-item nav-cripto" onclick="abrirAba('investir-cripto', this)">
+                <span class="ico">+</span> Comprar / Vender
+            </button>
+            <button class="nav-item nav-cripto" onclick="abrirAba('carteira-cripto', this)">
+                <span class="ico">&#9632;</span> Wallets
+            </button>
+
+            <div class="nav-section">Ferramentas</div>
+            <button class="nav-item" onclick="abrirAba('trader-pro', this)">
+                <span class="ico">~</span> Análise Técnica
+            </button>
+            <button class="nav-item" onclick="abrirAba('central-darf', this)">
+                <span class="ico">#</span> Central de DARF
+            </button>
+            <button class="nav-item" onclick="abrirAba('ativos-gerais', this)">
+                <span class="ico">&#9673;</span> Ativos em Cards
+            </button>
+            <button class="nav-item" onclick="abrirAba('configuracoes', this)">
+                <span class="ico">*</span> Configurações
+            </button>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                {% if current_user.avatar %}
+                <img src="{{ url_for('static', filename='avatars/' + current_user.avatar) }}" class="user-avatar-img">
+                {% else %}
+                <div class="user-avatar">{{ current_user.username[:1]|upper }}</div>
+                {% endif %}
+                <div>
+                    <div class="user-name">{{ current_user.username }}</div>
+                    <div class="user-email">Investidor</div>
+                </div>
+            </div>
+            <a href="/lgpd/minha-conta" style="display:block;padding:10px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;text-align:center;margin-bottom:8px;transition:0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                Minha Conta (LGPD)
+            </a>
+            <a href="/logout" class="btn-logout">Sair</a>
+        </div>
+    </div>
+
+    <!-- ============ CONTENT ============ -->
+    <div class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, m in messages %}
+                    <div class="flash {% if category == 'error' %}flash-error{% else %}flash-success{% endif %}">{{ m }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- ===== TRADER PRO (Análise Técnica) ===== -->
+        <div id="trader-pro" class="tab">
+            <h1>Análise Técnica</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                Selecione um ativo da sua carteira ou digite o código para visualizar suporte, resistência e sinais de compra/venda.
+            </p>
+
+            <div class="form-card" style="max-width: 100%; margin-bottom: 24px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label>Mercado</label>
+                        <select id="trader-mercado">
+                            <option value="BR">Brasil (B3)</option>
+                            <option value="US">Exterior (EUA)</option>
+                            <option value="CRIPTO">Criptomoedas</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label>Período</label>
+                        <select id="trader-periodo">
+                            <option value="1mo">1 Mês</option>
+                            <option value="2mo">2 Meses</option>
+                            <option value="3mo">3 Meses</option>
+                            <option value="4mo">4 Meses</option>
+                            <option value="5mo">5 Meses</option>
+                            <option value="6mo" selected>6 Meses</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2; min-width: 180px;">
+                        <label>Ativo</label>
+                        <input type="text" id="trader-ticker" list="lista-ativos-user" placeholder="Ex: PETR4, AAPL, BTC-BRL" style="text-transform: uppercase;">
+                        <datalist id="lista-ativos-user"></datalist>
+                    </div>
+                    <button onclick="buscarAnalise()" class="btn btn-primary" style="height: 42px;">Analisar</button>
+                </div>
+            </div>
+
+            {% if carteira or carteira_us or carteira_cripto %}
+            <div class="form-card" style="max-width: 100%; margin-bottom: 20px;">
+                <h3 style="margin-bottom: 12px;">Ativos na sua Carteira</h3>
+                <div class="trader-buttons" id="botoes-carteira">
+                    {% for codigo in carteira.keys() %}
+                    <button onclick="carregarGraficoRapido('BR', '{{ codigo }}')">{{ codigo }}</button>
+                    {% endfor %}
+                    {% for codigo in carteira_us.keys() %}
+                    <button onclick="carregarGraficoRapido('US', '{{ codigo }}')">{{ codigo }}</button>
+                    {% endfor %}
+                    {% for codigo in carteira_cripto.keys() %}
+                    <button onclick="carregarGraficoRapido('CRIPTO', '{{ codigo }}')">{{ codigo }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div id="trader-error" style="display: none;" class="flash flash-error"></div>
+            <div id="trader-loading" style="display: none; text-align: center; padding: 40px; color: var(--text-secondary);">Carregando dados...</div>
+
+            <div class="grid-cards" id="trader-cards" style="display: none;">
+                <div class="card" style="border-top: 3px solid var(--green);">
+                    <h3>Suporte</h3>
+                    <div class="valor" id="trader-support" style="color: var(--green);">0,00</div>
+                    <div class="sub">Fundo de compra — preço mínimo do período</div>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--red);">
+                    <h3>Resistência</h3>
+                    <div class="valor" id="trader-resistance" style="color: var(--red);">0,00</div>
+                    <div class="sub">Teto de venda — preço máximo do período</div>
+                </div>
+            </div>
+
+            <div id="chart-container" style="display: none;">
+                <canvas id="analiseChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ===== DASHBOARD CRIPTO ===== -->
+        <div id="dashboard-cripto" class="tab">
+            <h1>Criptomoedas</h1>
+            <div class="grid-cards">
+                <div class="card">
+                    <h3>Status</h3>
+                    <div class="valor {% if mercado_cripto == 'ABERTO (24/7)' %}positivo{% else %}negativo{% endif %}">{{ mercado_cripto }}</div>
+                    <div class="sub">Mercado 24/7</div>
+                </div>
+                <div class="card">
+                    <h3>Horário</h3>
+                    <div class="valor" style="font-size: 20px; color: var(--yellow);">Tempo Real</div>
+                    <div class="sub">Segunda a Domingo</div>
+                </div>
+            </div>
+
+            <div class="live-price" style="margin-bottom: 28px;">
+                <div class="coin-card"><div class="coin-name" style="color: #f59e0b;">Bitcoin</div><div class="coin-value pulse" id="live-btc" style="color: #f59e0b;">Buscando...</div></div>
+                <div class="coin-card"><div class="coin-name" style="color: #a855f7;">Ethereum</div><div class="coin-value pulse" id="live-eth" style="color: #a855f7;">Buscando...</div></div>
+                <div class="coin-card"><div class="coin-name" style="color: #22c55e;">Tether</div><div class="coin-value pulse" id="live-usdt" style="color: #22c55e;">Buscando...</div></div>
+                <div class="coin-card"><div class="coin-name" style="color: #ef4444;">Monero</div><div class="coin-value pulse" id="live-xmr" style="color: #ef4444;">Buscando...</div></div>
+            </div>
+
+            <div class="grid-cards">
+                <div class="card"><h3>Total Investido</h3><div class="valor">R$ {{ "%.2f"|format(total_investido_cripto) }}</div></div>
+                <div class="card" style="border-top: 3px solid var(--yellow);"><h3>Saldo Atual</h3><div class="valor">R$ {{ "%.2f"|format(saldo_atual_cripto) }}</div></div>
+                <div class="card"><h3>Rentabilidade Aberta</h3><div class="valor {% if lucro_aberto_total_cripto >= 0 %}positivo{% else %}negativo{% endif %}">R$ {{ "%.2f"|format(lucro_aberto_total_cripto) }}</div></div>
+                <div class="card"><h3>Lucros Realizados</h3><div class="valor positivo">R$ {{ "%.2f"|format(total_lucro_realizado_cripto) }}</div></div>
+                <div class="card"><h3>Prejuízos</h3><div class="valor negativo">R$ {{ "%.2f"|format(total_perda_realizada_cripto) }}</div></div>
+                <div class="card"><h3>Patrimônio Total</h3><div class="valor">R$ {{ "%.2f"|format(saldo_atual_cripto + total_lucro_realizado_cripto + total_perda_realizada_cripto) }}</div></div>
+            </div>
+            <div class="card full"><h3>Distribuição</h3><div style="height: 280px;"><canvas id="graficoCripto"></canvas></div></div>
+        </div>
+
+        <!-- ===== COMPRAR CRIPTO ===== -->
+        <div id="investir-cripto" class="tab">
+            <h1>Investir — Criptomoedas</h1>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div class="form-card" style="flex: 1; min-width: 320px;">
+                    <h3>Registrar Compra</h3>
+                    <form action="/comprar_cripto" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label>Data da Compra</label>
+                            <input type="date" name="data_compra" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Símbolo</label>
+                            <input type="text" name="codigo" id="cripto-ticker" list="top-cryptos" placeholder="Ex: BTC-BRL" required onchange="buscarCotacaoCripto()">
+                            <datalist id="top-cryptos">
+                                <option value="BTC-BRL">Bitcoin (Real)</option><option value="BTC-USDT">Bitcoin (Dólar)</option>
+                                <option value="ETH-BRL">Ethereum (Real)</option><option value="ETH-USDT">Ethereum (Dólar)</option>
+                                <option value="SOL-BRL">Solana (Real)</option><option value="SOL-USDT">Solana (Dólar)</option>
+                                <option value="BNB-BRL">BNB (Real)</option><option value="BNB-USDT">BNB (Dólar)</option>
+                                <option value="XRP-BRL">Ripple (Real)</option><option value="XRP-USDT">Ripple (Dólar)</option>
+                                <option value="ADA-BRL">Cardano (Real)</option><option value="ADA-USDT">Cardano (Dólar)</option>
+                                <option value="DOGE-BRL">Dogecoin (Real)</option><option value="DOGE-USDT">Dogecoin (Dólar)</option>
+                                <option value="LINK-BRL">Chainlink (Real)</option><option value="LINK-USDT">Chainlink (Dólar)</option>
+                                <option value="LTC-BRL">Litecoin (Real)</option><option value="LTC-USDT">Litecoin (Dólar)</option>
+                            </datalist>
+                        </div>
+                        <div id="live-price-box" style="display: none; background: var(--accent-bg); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; color: var(--accent);">
+                            Cotação: <strong><span id="live-price-value">Buscando...</span></strong>
+                        </div>
+                        <div class="form-group">
+                            <label>Exchange / Wallet</label>
+                            <input type="text" name="banco" placeholder="Ex: Binance, Mercado Bitcoin" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Quantidade</label>
+                                <input type="number" step="0.00000001" name="quantidade" id="cripto-qtd" placeholder="0.05" required min="0.00000001" oninput="calcularTotalCripto()">
+                            </div>
+                            <div class="form-group">
+                                <label>Total (R$)</label>
+                                <input type="number" step="0.01" name="valor_compra" id="cripto-total" placeholder="1000" required oninput="calcularQtdCripto()">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Aportar Moeda</button>
+                    </form>
+                </div>
+
+                <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+                    <div class="info-box">
+                        <h3>Sobre Criptomoedas</h3>
+                        <p>Criptomoedas são ativos digitais descentralizados baseados em blockchain. Diferente de ações e FIIs, o mercado funciona 24 horas por dia, 7 dias por semana, sem intermediários centrais. Podem ser usadas como investimento, reserva de valor ou meio de pagamento.</p>
+                        <ul>
+                            <li><strong>Volatilidade:</strong> Mercado conhecido por grandes oscilações de preço — requer gestão de risco.</li>
+                            <li><strong>Blockchain:</strong> Tecnologia que registra todas as transações de forma pública e imutável.</li>
+                            <li><strong>Custódia:</strong> Você pode deixar na exchange (corretora) ou em carteiras próprias (cold wallet, Ledger, etc.).</li>
+                            <li><strong>Liquidez:</strong> Mercado global com alta liquidez nos principais pares (BTC, ETH, USDT).</li>
+                        </ul>
+                    </div>
+                    <div class="info-box">
+                        <h3>Imposto de Renda — Criptomoedas</h3>
+                        <p>Regras da IN 1888 e Programa GCAP da Receita Federal:</p>
+                        <ul>
+                            <li><strong>Isenção Mensal (R$ {{ "%.2f"|format(conf.isencao_cripto) }}):</strong> Se o total de vendas do mês for ≤ R$ {{ "%.2f"|format(conf.isencao_cripto) }}, todo lucro é isento.</li>
+                            <li><strong>Alíquota ({{ "%.0f"|format(conf.taxa_cripto * 100) }}%):</strong> Sobre o ganho de capital quando as vendas mensais excedem o limite de isenção.</li>
+                            <li><strong>DARF (Código 4600):</strong> Deve ser pago até o último dia útil do mês seguinte, gerado pelo programa GCAP.</li>
+                            <li><strong>Declaração de Posse (IRPF):</strong> Obrigatório declarar na ficha Bens e Direitos (Grupo 08) se o valor de aquisição ultrapassar R$ 5.000.</li>
+                            <li><strong>IN 1888:</strong> Exchanges estrangeiras (Binance global, KuCoin, etc.) exigem reporte mensal ao e-CAC se o total negociado > R$ 30.000/mês. Exchanges nacionais reportam automaticamente.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CARTEIRA CRIPTO ===== -->
+        <div id="carteira-cripto" class="tab">
+            <h1>Wallets — Criptomoedas</h1>
+            <h2>Posição Atual</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Moeda</th><th>Exchange</th><th>Quantidade</th><th>Preço Médio</th><th>Cotação</th><th>Saldo</th><th>Rentab.</th><th>Vender</th></tr></thead>
+                <tbody>
+                    {% for codigo, ativo in carteira_cripto.items() %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ ativo.banco }}</td>
+                        <td>{{ "%.6f"|format(ativo.quantidade) }}</td>
+                        <td>R$ {{ "%.2f"|format(ativo.preco_medio) }}</td>
+                        <td style="font-weight: 600; color: var(--accent);">R$ {{ "%.2f"|format(ativo.preco_atual) }}</td>
+                        <td>R$ {{ "%.2f"|format(ativo.valor_atual) }}</td>
+                        <td class="{% if ativo.lucro_aberto >= 0 %}positivo{% else %}negativo{% endif %}">R$ {{ "%.2f"|format(ativo.lucro_aberto) }}</td>
+                        <td>
+                            <form action="/vender_cripto" method="POST" class="venda-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="codigo" value="{{ codigo }}">
+                                <input type="hidden" name="tipo_ativo" value="{{ ativo.tipo_ativo }}">
+                                <input type="date" name="data_venda" required title="Data">
+                                <input type="number" step="0.00000001" name="quantidade" max="{{ ativo.quantidade }}" min="0.00000001" placeholder="Qtd" required>
+                                <input type="number" step="0.01" name="valor_venda" placeholder="R$" required>
+                                <button type="submit" class="btn btn-sm btn-success">Vender</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhuma criptomoeda registrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <h2>Histórico de Transações</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Data</th><th>Op.</th><th>Moeda</th><th>Exchange</th><th>Qtd</th><th>Valor (R$)</th><th>Resultado</th><th>Ações</th></tr></thead>
+                <tbody>
+                    {% for t in transacoes_cripto %}
+                    <tr class="{% if t.tipo_transacao == 'Compra' %}tr-compra{% else %}tr-venda{% endif %}">
+                        <td>{{ t.data }}</td>
+                        <td><span class="tag {% if t.tipo_transacao == 'Compra' %}tag-green{% else %}tag-red{% endif %}">{{ t.tipo_transacao[:4] }}</span></td>
+                        <td style="font-weight: 600;">{{ t.codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ t.banco }}</td>
+                        <td>{{ "%.6f"|format(t.quantidade) if t.quantidade is float else t.quantidade }}</td>
+                        <td>R$ {{ "%.2f"|format(t.valor_total) }}</td>
+                        <td>{% if t.tipo_transacao == 'Venda' %}<span class="{% if t.lucro_perda >= 0 %}tag-green{% else %}tag-red{% endif %} tag">R$ {{ "%.2f"|format(t.lucro_perda) }}</span>{% else %}<span style="color: var(--text-muted);">—</span>{% endif %}</td>
+                        <td>
+                            <a href="/editar_cripto/{{ t.id }}" class="btn btn-sm btn-warning" style="text-decoration:none;">Editar</a>
+                            <a href="/excluir_cripto/{{ t.id }}" class="btn btn-sm btn-danger" style="text-decoration:none;" onclick="return confirm('Excluir permanentemente?');">Excluir</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhuma transação registrada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ===== CENTRAL DARF ===== -->
+        <div id="central-darf" class="tab">
+            <h1>Central de DARF</h1>
+
+            <h2>Brasil (B3)</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Mês</th><th>Lucro Base</th><th>Imposto</th><th>Vencimento</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for darf in lista_darfs_br %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ darf.mes }}</td>
+                        <td>R$ {{ "%.2f"|format(darf.lucro_total) }}</td>
+                        <td style="font-weight: 600; color: var(--red);">R$ {{ "%.2f"|format(darf.imposto_total) }}</td>
+                        <td>{{ darf.vencimento }}</td>
+                        <td>{% if darf.imposto_total >= 10 %}<span class="tag tag-red">EMITIR DARF</span>{% else %}<span class="tag tag-yellow">ACUMULAR</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhum imposto devido.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <h2>Criptomoedas</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Mês</th><th>Lucro Base</th><th>Imposto</th><th>Vencimento</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for darf in lista_darfs_cripto %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ darf.mes }}</td>
+                        <td>R$ {{ "%.2f"|format(darf.lucro_total) }}</td>
+                        <td style="font-weight: 600; color: var(--red);">R$ {{ "%.2f"|format(darf.imposto_total) }}</td>
+                        <td>{{ darf.vencimento }}</td>
+                        <td>{% if darf.imposto_total >= 10 %}<span class="tag tag-red">EMITIR DARF</span>{% else %}<span class="tag tag-yellow">ACUMULAR</span>{% endif %}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhum imposto devido.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <h2>Exterior (EUA) — Provisão Anual</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Ano</th><th>Lucro Base</th><th>Imposto</th><th>Vencimento</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for imposto in lista_impostos_us %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ imposto.ano }}</td>
+                        <td>US$ {{ "%.2f"|format(imposto.lucro_total) }}</td>
+                        <td style="font-weight: 600; color: var(--red);">US$ {{ "%.2f"|format(imposto.imposto_total) }}</td>
+                        <td>{{ imposto.vencimento }}</td>
+                        <td><span class="tag tag-blue">IRPF</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhum imposto devido.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ===== ATIVOS EM CARDS ===== -->
+        <div id="ativos-gerais" class="tab">
+            <h1>Ativos em Cards</h1>
+
+            <h2>Brasil (B3)</h2>
+            <div class="asset-grid">
+                {% for codigo, ativo in carteira.items() %}
+                <div class="asset-card">
+                    <div class="ticker">{{ codigo }}</div>
+                    <div class="label">Preço Médio</div>
+                    <div class="value">R$ {{ "%.2f"|format(ativo.preco_medio) }}</div>
+                    <div class="label">Cotação Atual</div>
+                    <div class="value" style="color: var(--accent);">R$ {{ "%.2f"|format(ativo.preco_atual) }}</div>
+                    <div class="label">Saldo</div>
+                    <div class="value">R$ {{ "%.2f"|format(ativo.valor_atual) }}</div>
+                    <div class="pct {% if ativo.rentabilidade_pct >= 0 %}positivo{% else %}negativo{% endif %}">{% if ativo.rentabilidade_pct >= 0 %}+{% endif %}{{ "%.1f"|format(ativo.rentabilidade_pct) }}%</div>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum ativo registrado.</p>
+                {% endfor %}
+            </div>
+
+            <h2>Exterior (EUA)</h2>
+            <div class="asset-grid">
+                {% for codigo, ativo in carteira_us.items() %}
+                <div class="asset-card">
+                    <div class="ticker">{{ codigo }}</div>
+                    <div class="label">Preço Médio</div>
+                    <div class="value">US$ {{ "%.2f"|format(ativo.preco_medio) }}</div>
+                    <div class="label">Cotação Atual</div>
+                    <div class="value" style="color: var(--accent);">US$ {{ "%.2f"|format(ativo.preco_atual) }}</div>
+                    <div class="label">Saldo</div>
+                    <div class="value">US$ {{ "%.2f"|format(ativo.valor_atual) }}</div>
+                    <div class="pct {% if ativo.rentabilidade_pct >= 0 %}positivo{% else %}negativo{% endif %}">{% if ativo.rentabilidade_pct >= 0 %}+{% endif %}{{ "%.1f"|format(ativo.rentabilidade_pct) }}%</div>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhum ativo registrado.</p>
+                {% endfor %}
+            </div>
+
+            <h2>Criptomoedas</h2>
+            <div class="asset-grid">
+                {% for codigo, ativo in carteira_cripto.items() %}
+                <div class="asset-card">
+                    <div class="ticker">{{ codigo }}</div>
+                    <div class="label">Exchange</div>
+                    <div class="value" style="font-size: 13px; color: var(--text-secondary);">{{ ativo.banco }}</div>
+                    <div class="label">Preço Médio</div>
+                    <div class="value">R$ {{ "%.2f"|format(ativo.preco_medio) }}</div>
+                    <div class="label">Cotação</div>
+                    <div class="value" style="color: var(--accent);">R$ {{ "%.2f"|format(ativo.preco_atual) }}</div>
+                    <div class="pct {% if ativo.rentabilidade_pct >= 0 %}positivo{% else %}negativo{% endif %}">{% if ativo.rentabilidade_pct >= 0 %}+{% endif %}{{ "%.1f"|format(ativo.rentabilidade_pct) }}%</div>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted); grid-column: 1 / -1;">Nenhuma criptomoeda registrada.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ===== CONFIGURAÇÕES ===== -->
+        <div id="configuracoes" class="tab">
+            <h1>Configurações</h1>
+
+            <div class="form-card" style="margin-bottom: 24px;">
+                <h3>Foto de Perfil</h3>
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex-shrink: 0;">
+                        {% if current_user.avatar %}
+                        <img src="{{ url_for('static', filename='avatars/' + current_user.avatar) }}" style="width:72px;height:72px;border-radius:16px;object-fit:cover;border:2px solid var(--border);">
+                        {% else %}
+                        <div style="width:72px;height:72px;border-radius:16px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:600;color:var(--accent);">{{ current_user.username[:1]|upper }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <form action="/upload_avatar" method="POST" enctype="multipart/form-data" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="file" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp" required style="max-width:200px;font-size:12px;">
+                            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                        </form>
+                        {% if current_user.avatar %}
+                        <form action="/remover_avatar" method="POST" style="margin-top:8px;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Remover foto</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <form action="/salvar_config" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <h3>Brasil (B3)</h3>
+                    <div class="form-group">
+                        <label>Limite de Isenção Mensal (R$)</label>
+                        <input type="number" name="isencao" value="{{ conf.isencao_br }}" step="0.01">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Swing Trade (%)</label>
+                            <input type="number" name="swing" value="{{ conf.taxa_swing_br * 100 }}" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Day Trade (%)</label>
+                            <input type="number" name="day" value="{{ conf.taxa_day_br * 100 }}" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>FII (%)</label>
+                            <input type="number" name="fii" value="{{ conf.taxa_fii_br * 100 }}" step="0.1">
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 24px;">Exterior (EUA)</h3>
+                    <div class="form-group">
+                        <label>Stocks e REITs (%)</label>
+                        <input type="number" name="exterior" value="{{ conf.taxa_exterior * 100 }}" step="0.1">
+                    </div>
+
+                    <h3 style="margin-top: 24px;">Criptomoedas</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Limite Isenção (R$)</label>
+                            <input type="number" name="isencao_cripto" value="{{ conf.isencao_cripto }}" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label>Imposto (%)</label>
+                            <input type="number" name="taxa_cripto" value="{{ conf.taxa_cripto * 100 }}" step="0.1">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Salvar Configurações</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== DASHBOARD BR ===== -->
+        <div id="dashboard" class="tab active">
+            <h1>Painel — Brasil (B3)</h1>
+            <div class="grid-cards">
+                <div class="card">
+                    <h3>Mercado</h3>
+                    <div class="valor {% if mercado_br == 'ABERTO' %}positivo{% else %}negativo{% endif %}">{{ mercado_br }}</div>
+                    <div class="sub">Seg–Sex, 10h–17h</div>
+                </div>
+                <div class="card">
+                    <h3>Total Investido</h3>
+                    <div class="valor">R$ {{ "%.2f"|format(total_investido) }}</div>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--accent);">
+                    <h3>Saldo Atual</h3>
+                    <div class="valor">R$ {{ "%.2f"|format(saldo_atual_b3) }}</div>
+                </div>
+                <div class="card">
+                    <h3>Rentabilidade Aberta</h3>
+                    <div class="valor {% if lucro_aberto_total_br >= 0 %}positivo{% else %}negativo{% endif %}">R$ {{ "%.2f"|format(lucro_aberto_total_br) }}</div>
+                </div>
+                {% if total_lucro_realizado %}
+                <div class="card">
+                    <h3>Lucros Realizados</h3>
+                    <div class="valor positivo">R$ {{ "%.2f"|format(total_lucro_realizado) }}</div>
+                </div>
+                {% endif %}
+                {% if total_perda_realizada %}
+                <div class="card">
+                    <h3>Prejuízos</h3>
+                    <div class="valor negativo">R$ {{ "%.2f"|format(total_perda_realizada) }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ===== INVESTIR BR ===== -->
+        <div id="investir" class="tab">
+            <h1>Investir — Brasil (B3)</h1>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div class="form-card" style="flex: 1; min-width: 320px;">
+                    <h3>Registrar Compra</h3>
+                    <form action="/comprar" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Data</label>
+                                <input type="date" name="data_compra" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select name="tipo" required>
+                                    <option value="acao">Ações</option>
+                                    <option value="fii">FII</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ticker</label>
+                                <input type="text" name="codigo" placeholder="Ex: PETR4" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Corretora</label>
+                                <input type="text" name="banco" placeholder="Ex: NuInvest" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Quantidade</label>
+                                <input type="number" name="quantidade" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Total (R$)</label>
+                                <input type="number" step="0.01" name="valor_compra" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Registrar Compra</button>
+                    </form>
+                </div>
+
+                <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+                    <div class="info-box">
+                        <h3>Sobre Ações</h3>
+                        <p>Ações são frações do capital social de uma empresa. Ao comprar uma ação, você se torna sócio daquela empresa e tem direito a participar dos lucros (dividendos, JCP) e da valorização do negócio.</p>
+                        <ul>
+                            <li><strong>Dividendos:</strong> Distribuição de lucros — <strong>isentos de IR</strong> para pessoa física.</li>
+                            <li><strong>Valorização:</strong> Ganho de capital tributável na venda.</li>
+                            <li><strong>Prazo:</strong> Não há prazo mínimo — pode vender a qualquer momento.</li>
+                        </ul>
+                    </div>
+                    <div class="info-box">
+                        <h3>Sobre FIIs (Fundos Imobiliários)</h3>
+                        <p>Fundos que investem em imóveis (físicos ou papéis). Você compra cotas e recebe rendimentos periódicos. Ideal para geração de renda passiva.</p>
+                        <ul>
+                            <li><strong>Rendimentos:</strong> Distribuídos mensalmente — <strong>isentos de IR</strong> para pessoa física.</li>
+                            <li><strong>Valorização:</strong> Ganho de capital tributado em <strong>{{ "%.0f"|format(conf.taxa_fii_br * 100) }}%</strong> na venda.</li>
+                            <li><strong>Liquidez:</strong> Negociados diariamente na B3 como ações.</li>
+                        </ul>
+                    </div>
+                    <div class="info-box">
+                        <h3>Imposto de Renda — B3</h3>
+                        <ul>
+                            <li><strong>Swing Trade ({{ "%.0f"|format(conf.taxa_swing_br * 100) }}%):</strong> Venda em dia diferente da compra. Alíquota sobre o lucro.</li>
+                            <li><strong>Day Trade ({{ "%.0f"|format(conf.taxa_day_br * 100) }}%):</strong> Compra e venda no mesmo dia. Alíquota maior.</li>
+                            <li><strong>Isenção Mensal (R$ {{ "%.2f"|format(conf.isencao_br) }}):</strong> Vendas de ações até este valor no mês são isentas (não vale para FII nem day trade).</li>
+                            <li><strong>FII ({{ "%.0f"|format(conf.taxa_fii_br * 100) }}%):</strong> Alíquota fixa sobre o lucro, sem isenção mensal.</li>
+                            <li><strong>DARF:</strong> Deve ser pago até o último dia útil do mês seguinte. Emita pelo Programa GCAP da Receita Federal.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CARTEIRA BR ===== -->
+        <div id="carteira" class="tab">
+            <h1>Carteira — B3</h1>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Ativo</th><th>Corretora</th><th>Qtd</th><th>Preço Médio</th><th>Cotação</th><th>Saldo</th><th>Vender</th></tr></thead>
+                <tbody>
+                    {% for codigo, ativo in carteira.items() %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ ativo.banco }}</td>
+                        <td>{{ ativo.quantidade }}</td>
+                        <td>R$ {{ "%.2f"|format(ativo.preco_medio) }}</td>
+                        <td style="font-weight: 600; color: var(--accent);">R$ {{ "%.2f"|format(ativo.preco_atual) }}</td>
+                        <td>R$ {{ "%.2f"|format(ativo.valor_atual) }}</td>
+                        <td>
+                            <form action="/vender" method="POST" class="venda-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="codigo" value="{{ codigo }}">
+                                <input type="hidden" name="tipo_ativo" value="{{ ativo.tipo_ativo }}">
+                                <input type="date" name="data_venda" required>
+                                <input type="number" name="quantidade" max="{{ ativo.quantidade }}" min="1" placeholder="Qtd" required>
+                                <input type="number" step="0.01" name="valor_venda" placeholder="R$" required>
+                                <select name="operacao" required>
+                                    <option value="swing_trade">Swing</option>
+                                    <option value="day_trade">Day</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-success">Vender</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhum ativo na carteira.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <h2>Histórico de Transações</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Data</th><th>Op.</th><th>Ativo</th><th>Tipo</th><th>Qtd</th><th>Total (R$)</th><th>Resultado</th><th>Ações</th></tr></thead>
+                <tbody>
+                    {% for t in transacoes %}
+                    <tr class="{% if t.tipo_transacao == 'Compra' %}tr-compra{% else %}tr-venda{% endif %}">
+                        <td>{{ t.data }}</td>
+                        <td><span class="tag {% if t.tipo_transacao == 'Compra' %}tag-green{% else %}tag-red{% endif %}">{{ t.tipo_transacao[:4] }}</span></td>
+                        <td style="font-weight: 600;">{{ t.codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ t.tipo_ativo|upper }}</td>
+                        <td>{{ t.quantidade }}</td>
+                        <td>R$ {{ "%.2f"|format(t.valor_total) }}</td>
+                        <td>{% if t.tipo_transacao == 'Venda' %}<span class="{% if t.lucro_perda >= 0 %}tag-green{% else %}tag-red{% endif %} tag">R$ {{ "%.2f"|format(t.lucro_perda) }}</span>{% else %}<span style="color: var(--text-muted);">—</span>{% endif %}</td>
+                        <td>
+                            <a href="/editar_br/{{ t.id }}" class="btn btn-sm btn-warning" style="text-decoration:none;">Editar</a>
+                            <a href="/excluir_br/{{ t.id }}" class="btn btn-sm btn-danger" style="text-decoration:none;" onclick="return confirm('Excluir permanentemente?');">Excluir</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhuma transação.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- ===== DASHBOARD US ===== -->
+        <div id="dashboard-us" class="tab">
+            <h1>Painel — Exterior (EUA)</h1>
+            <div class="grid-cards">
+                <div class="card">
+                    <h3>Mercado</h3>
+                    <div class="valor {% if mercado_us == 'ABERTO' %}positivo{% else %}negativo{% endif %}">{{ mercado_us }}</div>
+                    <div class="sub">Seg–Sex, 10h30–17h (BRT)</div>
+                </div>
+                <div class="card">
+                    <h3>Total Investido</h3>
+                    <div class="valor">US$ {{ "%.2f"|format(total_investido_us) }}</div>
+                </div>
+                <div class="card" style="border-top: 3px solid var(--purple);">
+                    <h3>Saldo Atual</h3>
+                    <div class="valor">US$ {{ "%.2f"|format(saldo_atual_us) }}</div>
+                </div>
+                <div class="card">
+                    <h3>Rentabilidade Aberta</h3>
+                    <div class="valor {% if lucro_aberto_total_us >= 0 %}positivo{% else %}negativo{% endif %}">US$ {{ "%.2f"|format(lucro_aberto_total_us) }}</div>
+                </div>
+                {% if total_lucro_realizado_us %}
+                <div class="card"><h3>Lucros Realizados</h3><div class="valor positivo">US$ {{ "%.2f"|format(total_lucro_realizado_us) }}</div></div>
+                {% endif %}
+                {% if total_perda_realizada_us %}
+                <div class="card"><h3>Prejuízos</h3><div class="valor negativo">US$ {{ "%.2f"|format(total_perda_realizada_us) }}</div></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ===== INVESTIR US ===== -->
+        <div id="investir-us" class="tab">
+            <h1>Investir — Exterior (EUA)</h1>
+            <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div class="form-card" style="flex: 1; min-width: 320px;">
+                    <h3>Registrar Compra</h3>
+                    <form action="/comprar_us" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Data</label>
+                                <input type="date" name="data_compra" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <select name="tipo" required>
+                                    <option value="stock">Stock</option>
+                                    <option value="reit">REIT</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ticker</label>
+                                <input type="text" name="codigo" placeholder="Ex: AAPL" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Corretora</label>
+                                <input type="text" name="banco" placeholder="Ex: Avenue" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Quantidade</label>
+                                <input type="number" name="quantidade" required min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Total (US$)</label>
+                                <input type="number" step="0.01" name="valor_compra" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Registrar Compra</button>
+                    </form>
+                </div>
+
+                <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+                    <div class="info-box">
+                        <h3>Sobre Stocks (Ações Americanas)</h3>
+                        <p>Stocks são ações de empresas listadas em bolsas dos EUA (NYSE, Nasdaq). Ao investir, você se expõe ao mercado americano, o maior e mais líquido do mundo. Grandes empresas como Apple, Microsoft, Google e Amazon são negociadas aqui.</p>
+                        <ul>
+                            <li><strong>Dividendos:</strong> Distribuídos trimestralmente — tributados em <strong>15%</strong> nos EUA ( withholding tax).</li>
+                            <li><strong>Valorização:</strong> Ganho de capital em dólar, sujeito a IR no Brasil.</li>
+                            <li><strong>Fractional Shares:</strong> Muitas corretoras permitem comprar frações de ações.</li>
+                        </ul>
+                    </div>
+                    <div class="info-box">
+                        <h3>Sobre REITs (Real Estate Investment Trusts)</h3>
+                        <p>Equivalentes americanos dos FIIs brasileiros. São fundos que investem em imóveis comerciais, shoppings, hospitais, galpões logísticos e hipotecas. Distribuem a maior parte do lucro como dividendos.</p>
+                        <ul>
+                            <li><strong>Dividendos:</strong> Distribuídos mensalmente — tributados como renda comum nos EUA.</li>
+                            <li><strong>Valorização:</strong> Ganho de capital em dólar.</li>
+                            <li><strong>Diversificação:</strong> Exposição ao mercado imobiliário americano sem comprar imóveis físicos.</li>
+                        </ul>
+                    </div>
+                    <div class="info-box">
+                        <h3>Imposto de Renda — Exterior</h3>
+                        <ul>
+                            <li><strong>Alíquota ({{ "%.0f"|format(conf.taxa_exterior * 100) }}%):</strong> Sobre o ganho de capital na venda de ativos no exterior.</li>
+                            <li><strong>Declaração Anual:</strong> O imposto é apurado anualmente e declarado no IRPF (ano seguinte). Não há DARF mensal como no Brasil.</li>
+                            <li><strong>Dividendos:</strong> Já tributados nos EUA (15% de withholding tax). No Brasil, entram como renda isenta (evitando bitributação).</li>
+                            <li><strong>Conversão:</strong> Os valores em dólar devem ser convertidos para reais pela cotação do dia da operação.</li>
+                            <li><strong>Corretoras:</strong> Plataformas como Avenue, Charles Schwab, Interactive Brokers e Passfolio oferecem acesso ao mercado americano.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== CARTEIRA US ===== -->
+        <div id="carteira-us" class="tab">
+            <h1>Carteira — Exterior</h1>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Ticker</th><th>Corretora</th><th>Qtd</th><th>Preço Médio</th><th>Cotação</th><th>Saldo</th><th>Vender</th></tr></thead>
+                <tbody>
+                    {% for codigo, ativo in carteira_us.items() %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ ativo.banco }}</td>
+                        <td>{{ ativo.quantidade }}</td>
+                        <td>US$ {{ "%.2f"|format(ativo.preco_medio) }}</td>
+                        <td style="font-weight: 600; color: var(--accent);">US$ {{ "%.2f"|format(ativo.preco_atual) }}</td>
+                        <td>US$ {{ "%.2f"|format(ativo.valor_atual) }}</td>
+                        <td>
+                            <form action="/vender_us" method="POST" class="venda-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="codigo" value="{{ codigo }}">
+                                <input type="hidden" name="tipo_ativo" value="{{ ativo.tipo_ativo }}">
+                                <input type="date" name="data_venda" required>
+                                <input type="number" name="quantidade" max="{{ ativo.quantidade }}" min="1" placeholder="Qtd" required>
+                                <input type="number" step="0.01" name="valor_venda" placeholder="US$" required>
+                                <button type="submit" class="btn btn-sm btn-success">Vender</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhum ativo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <h2>Histórico de Transações</h2>
+            <div class="table-wrap">
+            <table>
+                <thead><tr><th>Data</th><th>Op.</th><th>Ativo</th><th>Tipo</th><th>Qtd</th><th>Total (US$)</th><th>Resultado</th><th>Ações</th></tr></thead>
+                <tbody>
+                    {% for t in transacoes_us %}
+                    <tr class="{% if t.tipo_transacao == 'Compra' %}tr-compra{% else %}tr-venda{% endif %}">
+                        <td>{{ t.data }}</td>
+                        <td><span class="tag {% if t.tipo_transacao == 'Compra' %}tag-green{% else %}tag-red{% endif %}">{{ t.tipo_transacao[:4] }}</span></td>
+                        <td style="font-weight: 600;">{{ t.codigo }}</td>
+                        <td style="color: var(--text-secondary);">{{ t.tipo_ativo|upper }}</td>
+                        <td>{{ t.quantidade }}</td>
+                        <td>US$ {{ "%.2f"|format(t.valor_total) }}</td>
+                        <td>{% if t.tipo_transacao == 'Venda' %}<span class="{% if t.lucro_perda >= 0 %}tag-green{% else %}tag-red{% endif %} tag">US$ {{ "%.2f"|format(t.lucro_perda) }}</span>{% else %}<span style="color: var(--text-muted);">—</span>{% endif %}</td>
+                        <td>
+                            <a href="/editar_us/{{ t.id }}" class="btn btn-sm btn-warning" style="text-decoration:none;">Editar</a>
+                            <a href="/excluir_us/{{ t.id }}" class="btn btn-sm btn-danger" style="text-decoration:none;" onclick="return confirm('Excluir permanentemente?');">Excluir</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 40px;">Nenhuma transação.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ JAVASCRIPT ============ -->
+    <script>
+        Chart.defaults.color = '#7f8397';
+        Chart.defaults.borderColor = '#222639';
+
+        let traderProCarregado = false;
+
+        function abrirAba(nomeAba, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(nomeAba).classList.add('active');
+            if (el) el.classList.add('active');
+
+            if (nomeAba === 'trader-pro' && !traderProCarregado) {
+                const botoes = document.getElementById('botoes-carteira');
+                if (botoes) {
+                    const bts = botoes.getElementsByTagName('button');
+                    if (bts.length > 0) bts[0].click();
+                }
+                traderProCarregado = true;
+            }
+            if (nomeAba === 'dashboard-cripto') {
+                buscarLiveCripto();
+            }
+        }
+
+        // ===== CRIPTO LIVE =====
+        async function buscarLiveCripto() {
+            const pares = ['BTC-BRL', 'ETH-BRL', 'USDT-BRL', 'XMR-BRL'];
+            const ids = ['live-btc', 'live-eth', 'live-usdt', 'live-xmr'];
+            for (let i = 0; i < pares.length; i++) {
+                try {
+                    const r = await fetch('/api/cotacao/' + pares[i]);
+                    const d = await r.json();
+                    if (d.preco > 0) document.getElementById(ids[i]).textContent = 'R$ ' + d.preco.toFixed(2);
+                } catch(e) {}
+            }
+        }
+
+        // ===== CRIPTO COMPRA =====
+        async function buscarCotacaoCripto() {
+            const ticker = document.getElementById('cripto-ticker').value;
+            if (!ticker) return;
+            try {
+                const r = await fetch('/api/cotacao/' + ticker);
+                const d = await r.json();
+                const box = document.getElementById('live-price-box');
+                if (d.preco > 0) {
+                    box.style.display = 'block';
+                    document.getElementById('live-price-value').textContent = 'R$ ' + d.preco.toFixed(2);
+                } else {
+                    box.style.display = 'none';
+                }
+            } catch(e) { document.getElementById('live-price-box').style.display = 'none'; }
+        }
+
+        function calcularTotalCripto() {
+            const qtd = parseFloat(document.getElementById('cripto-qtd').value) || 0;
+            const priceText = document.getElementById('live-price-value').textContent.replace('R$ ', '').replace(',', '');
+            const price = parseFloat(priceText) || 0;
+            if (qtd && price) document.getElementById('cripto-total').value = (qtd * price).toFixed(2);
+        }
+
+        function calcularQtdCripto() {
+            const total = parseFloat(document.getElementById('cripto-total').value) || 0;
+            const priceText = document.getElementById('live-price-value').textContent.replace('R$ ', '').replace(',', '');
+            const price = parseFloat(priceText) || 0;
+            if (total && price) document.getElementById('cripto-qtd').value = (total / price).toFixed(8);
+        }
+
+        // ===== ANÁLISE TÉCNICA =====
+        let chartInstance = null;
+
+        function carregarGraficoRapido(pais, ticker) {
+            document.getElementById('trader-mercado').value = pais;
+            document.getElementById('trader-ticker').value = ticker;
+            buscarAnalise();
+        }
+
+        async function buscarAnalise() {
+            const pais = document.getElementById('trader-mercado').value;
+            const periodo = document.getElementById('trader-periodo').value;
+            const ticker = document.getElementById('trader-ticker').value.trim().toUpperCase();
+            if (!ticker) return;
+
+            document.getElementById('trader-error').style.display = 'none';
+            document.getElementById('trader-loading').style.display = 'block';
+            document.getElementById('trader-cards').style.display = 'none';
+            document.getElementById('chart-container').style.display = 'none';
+
+            try {
+                const r = await fetch('/api/analise/' + pais + '/' + ticker + '/' + periodo);
+                const d = await r.json();
+                document.getElementById('trader-loading').style.display = 'none';
+
+                if (d.error) {
+                    document.getElementById('trader-error').textContent = d.error;
+                    document.getElementById('trader-error').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('trader-support').textContent = d.support.toFixed(2);
+                document.getElementById('trader-resistance').textContent = d.resistance.toFixed(2);
+                document.getElementById('trader-cards').style.display = 'grid';
+                document.getElementById('chart-container').style.display = 'block';
+
+                if (chartInstance) chartInstance.destroy();
+
+                chartInstance = new Chart(document.getElementById('analiseChart'), {
+                    type: 'line',
+                    data: {
+                        labels: d.dates,
+                        datasets: [
+                            {
+                                label: ticker,
+                                data: d.prices,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59,130,246,0.08)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.2,
+                                pointRadius: 1,
+                                pointHoverRadius: 4,
+                            },
+                            {
+                                label: 'Compra (você)',
+                                data: d.user_purchases.map(p => ({x: p.x, y: p.y})),
+                                backgroundColor: '#3b82f6',
+                                pointRadius: 6,
+                                pointStyle: 'rectRot',
+                                showLine: false,
+                            },
+                            {
+                                label: 'Sinal de Compra',
+                                data: d.buy_signals.map(s => ({x: s.x, y: s.y})),
+                                backgroundColor: '#22c55e',
+                                pointRadius: 8,
+                                pointStyle: 'triangle',
+                                showLine: false,
+                            },
+                            {
+                                label: 'Sinal de Venda',
+                                data: d.sell_signals.map(s => ({x: s.x, y: s.y})),
+                                backgroundColor: '#ef4444',
+                                pointRadius: 8,
+                                pointStyle: 'triangle',
+                                showLine: false,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { boxWidth: 12, padding: 16, font: {size: 12} } }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { maxTicksLimit: 12, font: {size: 10} },
+                                grid: { display: false }
+                            },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.04)' },
+                                ticks: { font: {size: 11} }
+                            }
+                        }
+                    }
+                });
+            } catch(e) {
+                document.getElementById('trader-loading').style.display = 'none';
+                document.getElementById('trader-error').textContent = 'Erro ao conectar com a base de dados.';
+                document.getElementById('trader-error').style.display = 'block';
+            }
+        }
+
+        // ===== GRÁFICO CRIPTO =====
+        document.addEventListener('DOMContentLoaded', function() {
+            const labels = [];
+            const values = [];
+            {% for codigo, ativo in carteira_cripto.items() %}
+            labels.push('{{ codigo }}');
+            values.push({{ ativo.valor_atual }});
+            {% endfor %}
+            if (labels.length && document.getElementById('graficoCripto')) {
+                new Chart(document.getElementById('graficoCripto'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: ['#f59e0b', '#a855f7', '#22c55e', '#ef4444', '#3b82f6', '#eab308', '#ec4899'],
+                            borderWidth: 0,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: {size: 12} } }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

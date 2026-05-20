@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidade — InvTrader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0b0d12; --bg-card: #161922;
+            --border: #222639; --text-primary: #e4e7ed;
+            --text-secondary: #7f8397; --accent: #3b82f6;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary); color: var(--text-primary);
+            padding: 40px 24px; display: flex; justify-content: center;
+        }
+        .container { max-width: 800px; width: 100%; }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 40px;
+        }
+        h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .data { color: var(--text-secondary); font-size: 13px; margin-bottom: 32px; }
+        h2 { font-size: 18px; font-weight: 600; color: #fff; margin-top: 32px; margin-bottom: 12px; }
+        p, li { font-size: 14px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 12px; }
+        ul { padding-left: 20px; margin-bottom: 16px; }
+        li { margin-bottom: 6px; }
+        strong { color: var(--text-primary); }
+        .tag {
+            display: inline-block; padding: 2px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 600;
+            background: rgba(59,130,246,0.1); color: var(--accent);
+        }
+        .btn-voltar {
+            display: inline-block; margin-bottom: 24px;
+            color: var(--accent); text-decoration: none; font-size: 14px;
+        }
+        .btn-voltar:hover { text-decoration: underline; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard" class="btn-voltar">&larr; Voltar ao painel</a>
+        <div class="card">
+            <h1>Política de Privacidade</h1>
+            <p class="data">Última atualização: Maio de 2026</p>
+
+            <p>
+                Esta Política de Privacidade descreve como o <strong>InvTrader</strong> coleta, usa, armazena e protege
+                seus dados pessoais em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (LGPD — Lei nº 13.709/2018)</strong>.
+            </p>
+
+            <h2>1. Controlador dos Dados</h2>
+            <p>
+                O controlador responsável pelos seus dados é o próprio usuário titular da conta.
+                O sistema InvTrader é uma ferramenta local de gerenciamento financeiro e os dados permanecem sob seu controle.
+            </p>
+
+            <h2>2. Dados Coletados</h2>
+            <p>Durante a utilização do sistema, os seguintes dados são coletados:</p>
+            <ul>
+                <li><strong>Dados de identificação:</strong> nome de usuário (<em>username</em>) e avatar (foto de perfil) — fornecidos voluntariamente por você.</li>
+                <li><strong>Dados de autenticação:</strong> senha de acesso, armazenada de forma criptografada (hash scrypt — mão única, não legível).</li>
+                <li><strong>Dados financeiros:</strong> transações de compra e venda de ativos (B3, exterior, criptomoedas), valores, quantidades, datas e corretoras utilizadas.</li>
+                <li><strong>Dados de configuração:</strong> preferências de alíquotas de imposto e limites de isenção.</li>
+                <li><strong>Dados de uso:</strong> registros de login e interações com o sistema (logs de acesso).</li>
+            </ul>
+
+            <h2>3. Finalidade do Tratamento</h2>
+            <p>Seus dados são utilizados exclusivamente para as seguintes finalidades:</p>
+            <ul>
+                <li><span class="tag">LEGÍTIMO INTERESSE</span> &nbsp; Operar o sistema de controle de investimentos e calcular impostos automaticamente.</li>
+                <li><span class="tag">CONSENTIMENTO</span> &nbsp; Personalizar sua experiência com avatar e configurações salvas.</li>
+                <li><span class="tag">OBRIGAÇÃO LEGAL</span> &nbsp; Auxiliar na apuração de tributos (Imposto de Renda) para cumprimento de obrigações fiscais.</li>
+            </ul>
+
+            <h2>4. Compartilhamento de Dados</h2>
+            <p>
+                O InvTrader <strong>não compartilha</strong> seus dados com terceiros. As únicas requisições externas feitas pelo sistema
+                são para consultar cotações públicas de ativos (AwesomeAPI, Binance, Yahoo Finance) — <strong>nenhum dado pessoal</strong>
+                é enviado nessas consultas.
+            </p>
+
+            <h2>5. Armazenamento e Segurança</h2>
+            <p>Seus dados são armazenados localmente em banco de dados SQLite no próprio servidor. As medidas de segurança incluem:</p>
+            <ul>
+                <li>Senhas armazenadas com hash criptográfico <strong>scrypt</strong> (inversão inviável).</li>
+                <li>Proteção contra ataques CSRF (tokens em formulários).</li>
+                <li>Validação de entrada em todos os formulários.</li>
+                <li>Sessões gerenciadas com chave secreta criptograficamente segura.</li>
+                <li>Upload de avatar validado por extensão e conteúdo (magic bytes).</li>
+                <li>Comunicações com APIs externas via HTTPS com verificação SSL.</li>
+            </ul>
+
+            <h2>6. Período de Retenção</h2>
+            <p>
+                Os dados são mantidos pelo tempo necessário à prestação do serviço. Ao solicitar a exclusão da conta,
+                todos os dados pessoais e financeiros são removidos permanentemente.
+                Registros meramente identificadores (username anonimizado) são retidos apenas para garantir a integridade referencial do sistema.
+            </p>
+
+            <h2>7. Seus Direitos (LGPD)</h2>
+            <p>Você pode exercer os seguintes direitos a qualquer momento:</p>
+            <ul>
+                <li><strong>Confirmação e acesso:</strong> veja exatamente quais dados armazenamos sobre você na página "Minha Conta".</li>
+                <li><strong>Correção:</strong> edite suas transações e configurações diretamente pelo painel.</li>
+                <li><strong>Exclusão (direito ao esquecimento):</strong> exclua sua conta e todos os dados associados em "Minha Conta &rarr; Excluir Conta".</li>
+                <li><strong>Portabilidade:</strong> exporte todos os seus dados em formato JSON em "Minha Conta &rarr; Exportar Dados".</li>
+                <li><strong>Revogação do consentimento:</strong> você pode deixar de usar o sistema a qualquer momento.</li>
+            </ul>
+
+            <h2>8. Consentimento</h2>
+            <p>
+                Ao utilizar o sistema, você declara ter lido e compreendido esta Política de Privacidade.
+                O consentimento é registrado com data e hora na sua conta. Você pode revogá-lo excluindo sua conta.
+            </p>
+
+            <h2>9. Alterações nesta Política</h2>
+            <p>
+                Esta política pode ser atualizada periodicamente. Recomenda-se revisá-la sempre que houver atualizações do sistema.
+            </p>
+
+            <hr>
+
+            <p style="text-align: center; font-size: 12px; color: var(--text-secondary);">
+                InvTrader — Gestão de Investimentos &mdash; Em conformidade com a Lei nº 13.709/2018 (LGPD)
+            </p>
+        </div>
+    </div>
+</body>
+</html>
