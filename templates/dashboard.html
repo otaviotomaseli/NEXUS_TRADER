@@ -1,5 +1,11 @@
+<!-- ============================================================ -->
+<!-- dashboard.html — Painel principal do InvTrader              -->
+<!-- Contém: sidebar, abas de B3, EUA, Cripto, análise técnica,  -->
+<!--          DARF, configurações, rentabilidade e JS dos charts  -->
+<!-- ============================================================ -->
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Cabeçalho: metadados, título, fonte, Chart.js CDN e estilos -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Estilos globais do dashboard — tema escuro, sidebar, cards, tabelas e charts -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -821,7 +828,9 @@
     </style>
 </head>
 <body>
-    <!-- ============ SIDEBAR ============ -->
+    <!-- ======================================================================== -->
+    <!-- SIDEBAR — Navegação principal entre painéis (B3, EUA, Cripto, Ferramentas) -->
+    <!-- ======================================================================== -->
     <div class="sidebar">
         <div class="sidebar-header">
             <div class="logo"><div class="logo-wrapper"><div class="logo-coin"><div class="coin-inner">N</div></div></div></div>
@@ -886,6 +895,7 @@
             </a>
         </div>
 
+        <!-- Rodapé da sidebar — foto/avatar do usuário, link LGPD e botão sair -->
         <div class="sidebar-footer">
             <div class="user-info">
                 {% if current_user.avatar %}
@@ -908,8 +918,11 @@
         </div>
     </div>
 
-    <!-- ============ CONTENT ============ -->
+    <!-- ======================================================================== -->
+    <!-- CONTEÚDO PRINCIPAL — abas dinâmicas exibidas conforme navegação da sidebar -->
+    <!-- ======================================================================== -->
     <div class="content">
+        <!-- Mensagens Flash — feedback de operações (sucesso/erro) retornadas pelo servidor -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, m in messages %}
@@ -918,7 +931,10 @@
             {% endif %}
         {% endwith %}
 
-        <!-- ===== TRADER PRO (Análise Técnica) ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: TRADER PRO — Análise Técnica                                   -->
+        <!-- Gráfico interativo com suporte, resistência e sinais de compra/venda -->
+        <!-- ==================================================================== -->
         <div id="trader-pro" class="tab">
             <h1>Análise Técnica</h1>
             <p style="color: var(--text-secondary); margin-bottom: 20px;">
@@ -993,7 +1009,10 @@
             </div>
         </div>
 
-        <!-- ===== DASHBOARD CRIPTO ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: DASHBOARD CRIPTO — visão geral do mercado de criptomoedas       -->
+        <!-- Cards de market status, cotações live, resumo financeiro e gráfico   -->
+        <!-- ==================================================================== -->
         <div id="dashboard-cripto" class="tab">
             <h1>Criptomoedas</h1>
             <div class="grid-cards">
@@ -1027,7 +1046,10 @@
             <div class="card full"><h3>Distribuição</h3><div style="height: 280px;"><canvas id="graficoCripto"></canvas></div></div>
         </div>
 
-        <!-- ===== COMPRAR CRIPTO ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: INVESTIR CRIPTO — formulário de compra e informações educativas -->
+        <!-- Inclui busca de cotação live, cálculo automático de quantidade/total -->
+        <!-- ==================================================================== -->
         <div id="investir-cripto" class="tab">
             <h1>Investir — Criptomoedas</h1>
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
@@ -1101,7 +1123,10 @@
             </div>
         </div>
 
-        <!-- ===== CARTEIRA CRIPTO ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: CARTEIRA CRIPTO — posição atual e histórico de transações       -->
+        <!-- Tabela de wallets com preço médio, cotação, rentabilidade e venda    -->
+        <!-- ==================================================================== -->
         <div id="carteira-cripto" class="tab">
             <h1>Wallets — Criptomoedas</h1>
             <h2>Posição Atual</h2>
@@ -1164,7 +1189,10 @@
             </div>
         </div>
 
-        <!-- ===== CENTRAL DARF ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: CENTRAL DARF — apuração de impostos                             -->
+        <!-- Tabelas de lucro/imposto por mês para B3, Cripto e provisão anual EUA -->
+        <!-- ==================================================================== -->
         <div id="central-darf" class="tab">
             <h1>Central de DARF</h1>
 
@@ -1229,7 +1257,10 @@
             </div>
         </div>
 
-        <!-- ===== ATIVOS EM CARDS ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: ATIVOS EM CARDS — visualização em cards de todos os ativos      -->
+        <!-- Exibe preço médio, cotação atual e rentabilidade para B3, EUA e Cripto-->
+        <!-- ==================================================================== -->
         <div id="ativos-gerais" class="tab">
             <h1>Ativos em Cards</h1>
 
@@ -1288,7 +1319,10 @@
             </div>
         </div>
 
-        <!-- ===== CONFIGURAÇÕES ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: CONFIGURAÇÕES — foto de perfil e alíquotas de imposto           -->
+        <!-- Formulários para upload de avatar e ajuste de taxas por mercado      -->
+        <!-- ==================================================================== -->
         <div id="configuracoes" class="tab">
             <h1>Configurações</h1>
 
@@ -1363,7 +1397,10 @@
             </div>
         </div>
 
-        <!-- ===== RENTABILIDADE ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: RENTABILIDADE — evolução patrimonial e resultados acumulados    -->
+        <!-- Cards de resumo + gráfico de linha (investido vs. total)             -->
+        <!-- ==================================================================== -->
         <div id="rentabilidade" class="tab">
             <h1>Rentabilidade Acumulada</h1>
             <div class="grid-cards" id="rentabilidade-cards">
@@ -1395,7 +1432,10 @@
             </p>
         </div>
 
-        <!-- ===== DASHBOARD BR ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: DASHBOARD BR — visão geral do mercado brasileiro (B3)           -->
+        <!-- Cards com status do mercado, total investido, saldo e rentabilidade  -->
+        <!-- ==================================================================== -->
         <div id="dashboard" class="tab active">
             <h1>Painel — Brasil (B3)</h1>
             <div class="grid-cards">
@@ -1431,7 +1471,9 @@
             </div>
         </div>
 
-        <!-- ===== INVESTIR BR ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: INVESTIR BR — formulário de compra (Ações/FIIs) + info escolar -->
+        <!-- ==================================================================== -->
         <div id="investir" class="tab">
             <h1>Investir — Brasil (B3)</h1>
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
@@ -1509,7 +1551,10 @@
             </div>
         </div>
 
-        <!-- ===== CARTEIRA BR ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: CARTEIRA BR — posição atual de B3 e histórico de transações     -->
+        <!-- Tabela de ativos com preço médio, cotação, venda inline              -->
+        <!-- ==================================================================== -->
         <div id="carteira" class="tab">
             <h1>Carteira — B3</h1>
             <div class="table-wrap">
@@ -1547,6 +1592,7 @@
             </table>
             </div>
 
+            <!-- Tabela de histórico de transações B3 — compra/venda com resultado e ações -->
             <h2>Histórico de Transações</h2>
             <div class="table-wrap">
             <table>
@@ -1574,7 +1620,10 @@
             </div>
         </div>
 
-        <!-- ===== DASHBOARD US ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: DASHBOARD US — visão geral do mercado americano                 -->
+        <!-- Cards com status do mercado, total investido, saldo e rentabilidade  -->
+        <!-- ==================================================================== -->
         <div id="dashboard-us" class="tab">
             <h1>Painel — Exterior (EUA)</h1>
             <div class="grid-cards">
@@ -1604,7 +1653,9 @@
             </div>
         </div>
 
-        <!-- ===== INVESTIR US ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: INVESTIR US — formulário de compra (Stocks/REITs) + info escolar -->
+        <!-- ==================================================================== -->
         <div id="investir-us" class="tab">
             <h1>Investir — Exterior (EUA)</h1>
             <div style="display: flex; gap: 24px; flex-wrap: wrap;">
@@ -1682,7 +1733,10 @@
             </div>
         </div>
 
-        <!-- ===== CARTEIRA US ===== -->
+        <!-- ==================================================================== -->
+        <!-- ABA: CARTEIRA US — posição atual de ativos americanos + histórico    -->
+        <!-- Tabela com preço médio em dólar, cotação, venda inline               -->
+        <!-- ==================================================================== -->
         <div id="carteira-us" class="tab">
             <h1>Carteira — Exterior</h1>
             <div class="table-wrap">
@@ -1716,6 +1770,7 @@
             </table>
             </div>
 
+            <!-- Tabela de histórico de transações EUA — compra/venda com resultado e ações -->
             <h2>Histórico de Transações</h2>
             <div class="table-wrap">
             <table>
@@ -1744,13 +1799,17 @@
         </div>
     </div>
 
-    <!-- ============ JAVASCRIPT ============ -->
+    <!-- ======================================================================== -->
+    <!-- JAVASCRIPT — Charts (Chart.js), navegação por abas, cripto live,        -->
+    <!--               análise técnica, rentabilidade e gráfico de distribuição   -->
+    <!-- ======================================================================== -->
     <script>
         Chart.defaults.color = '#7f8397';
         Chart.defaults.borderColor = '#222639';
 
         let traderProCarregado = false;
 
+        // Alterna entre abas — ativa a aba alvo e destaca o botão correspondente na sidebar
         function abrirAba(nomeAba, el) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -1803,6 +1862,7 @@
             } catch(e) { document.getElementById('live-price-box').style.display = 'none'; }
         }
 
+        // Calcula o total (R$) automaticamente com base na quantidade e na cotação live
         function calcularTotalCripto() {
             const qtd = parseFloat(document.getElementById('cripto-qtd').value) || 0;
             const priceText = document.getElementById('live-price-value').textContent.replace('R$ ', '').replace(',', '');
@@ -1810,6 +1870,7 @@
             if (qtd && price) document.getElementById('cripto-total').value = (qtd * price).toFixed(2);
         }
 
+        // Calcula a quantidade com base no total informado e na cotação live
         function calcularQtdCripto() {
             const total = parseFloat(document.getElementById('cripto-total').value) || 0;
             const priceText = document.getElementById('live-price-value').textContent.replace('R$ ', '').replace(',', '');
@@ -1820,12 +1881,14 @@
         // ===== ANÁLISE TÉCNICA =====
         let chartInstance = null;
 
+        // Carrega o gráfico de análise técnica rapidamente ao clicar em um ativo da carteira
         function carregarGraficoRapido(pais, ticker) {
             document.getElementById('trader-mercado').value = pais;
             document.getElementById('trader-ticker').value = ticker;
             buscarAnalise();
         }
 
+        // Busca dados de análise técnica (suporte, resistência, sinais) via API e renderiza o chart
         async function buscarAnalise() {
             const pais = document.getElementById('trader-mercado').value;
             const periodo = document.getElementById('trader-periodo').value;

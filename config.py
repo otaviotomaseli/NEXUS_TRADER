@@ -8,6 +8,7 @@ if not os.getenv('SECRET_KEY'):
     load_dotenv('.env.example', override=True)
 
 
+# Classe base de configuração — lê valores do arquivo .env com fallbacks seguros para desenvolvimento
 class Config:
     """Configurações base da aplicação Nexus Trader.
 
@@ -15,7 +16,7 @@ class Config:
     modo debug e as taxas/tributações padrão para cálculos de IR.
     """
 
-    # Chave secreta para sessões Flask e tokens CSRF
+    # Chave secreta para sessões Flask e tokens CSRF (fallback: string aleatória de 64 bytes)
     SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(64).hex())
     # URI de conexão com o banco de dados (SQLite como fallback)
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///nexus.db')
@@ -38,15 +39,18 @@ class Config:
 
 class DevelopmentConfig(Config):
     """Configuração para ambiente de desenvolvimento — debug ativado."""
+    # Habilita modo debug para recarregamento automático (hot-reload) e tracebacks detalhados no navegador
     DEBUG = True
 
 
 class ProductionConfig(Config):
     """Configuração para ambiente de produção — debug desativado."""
+    # Desliga o modo debug por segurança: evita vazamento de informações sensíveis e melhora desempenho
     DEBUG = False
 
 
-# Mapeamento de nomes para classes de configuração, usado pelo create_app()
+# Mapeamento de nomes para classes de configuração, usado pelo create_app() em app/__init__.py
+# 'default' aponta para DevelopmentConfig para facilitar o desenvolvimento local — alterar para ProductionConfig em produção
 config_map = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,

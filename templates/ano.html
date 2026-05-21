@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Template: ano.html — Página de extrato anual consolidado com resumo mensal e histórico detalhado -->
 <head>
     <meta charset="UTF-8">
     <title>{{ titulo }} - InvTrader</title>
-    <style>
+    <!-- Estilos CSS com tema escuro neon — variáveis de cor, tabelas, linhas coloridas e botões de ação -->
+<style>
         :root {
             --bg-body: #0b0c10;
             --bg-card: #1c1e29;
@@ -48,14 +50,19 @@
 <body>
 
     <div class="container">
+        <!-- Link de navegação: retorno ao painel principal do sistema -->
         <a href="/dashboard" class="btn-voltar">&larr; Voltar ao Painel Principal</a>
         
+        <!-- Título dinâmico da página (ano e mercado) com descrição explicativa do relatório -->
         <h1>{{ titulo }}</h1>
         <p style="margin-bottom: 20px;">Este painel consolida todos os impostos devidos agrupando-os por mês, facilitando a emissão do seu DARF, além de manter o histórico detalhado.</p>
         
+        <!-- Botão para gerar e baixar o relatório completo em PDF do ano e mercado selecionados -->
         <a href="/baixar_ano/{{ ano }}/{{ pais }}" class="btn-download">📥 Gerar PDF do Relatório</a>
 
+        <!-- Seção 1: Tabela de resumo mensal — lucro/prejuízo, imposto devido, vencimento e aviso de pagamento -->
         <h2>1. Resumo de Impostos por Mês (Agrupado)</h2>
+        <!-- Tabela de resumo mensal — agrupa vendas por mês e exibe imposto consolidado com alertas -->
         <table>
             <thead>
                 <tr>
@@ -92,7 +99,9 @@
             </tbody>
         </table>
 
+        <!-- Seção 2: Tabela com histórico linha a linha de todas as transações do ano -->
         <h2>2. Histórico Detalhado (Compras e Vendas)</h2>
+        <!-- Tabela de histórico detalhado — lista compras e vendas com data, ativo, valor, lucro e ação -->
         <table>
             <thead>
                 <tr>

@@ -1,9 +1,12 @@
 # Módulo de modelos do banco de dados (SQLAlchemy)
 # Define as tabelas do sistema Nexus Trader: usuários, configurações e transações.
 
+# datetime e timezone para registrar timestamps de criação, login e consentimento LGPD
 from datetime import datetime, timezone
 
+# UserMixin fornece os métodos de autenticação (is_authenticated, get_id) exigidos pelo Flask-Login, sem implementá-los manualmente
 from flask_login import UserMixin
+# Instância SQLAlchemy global (declarada em app/__init__.py), usada como base db.Model em todos os modelos
 from app import db
 
 
@@ -37,8 +40,9 @@ class Configuracao(db.Model):
     Modelo da tabela 'configuracao'.
     Armazena as preferências fiscais e alíquotas personalizadas de cada usuário.
     """
+    # Identificador único da configuração (chave primária auto-incremento)
     id = db.Column(db.Integer, primary_key=True)
-    # Chave estrangeira vinculando ao usuário dono da configuração
+    # Chave estrangeira vinculando cada configuração ao seu respectivo usuário (relação 1:1)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     # Limite de isenção mensal para vendas na B3 (padrão: R$ 20.000,00)
     isencao_br = db.Column(db.Float, default=20000.0)
@@ -62,7 +66,9 @@ class Transacao(db.Model):
     Registra operações de compra/venda de ativos nacionais (B3).
     Utilizada para apuração de Imposto de Renda na fonte.
     """
+    # Identificador único da transação nacional (chave primária auto-incremento)
     id = db.Column(db.Integer, primary_key=True)
+    # Chave estrangeira associando a transação ao usuário que realizou a operação
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     # Tipo do ativo: 'acao', 'fii', etc.
     tipo_ativo = db.Column(db.String(50), nullable=False)
@@ -92,7 +98,9 @@ class TransacaoExterior(db.Model):
     Registra operações de compra/venda de ativos internacionais (stocks, REITs).
     Segue a mesma estrutura da Transacao nacional, porém com apuração separada.
     """
+    # Identificador único da transação internacional (chave primária auto-incremento)
     id = db.Column(db.Integer, primary_key=True)
+    # Chave estrangeira associando a transação exterior ao usuário dono da operação
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     # Tipo do ativo: 'stock', 'reit', etc.
     tipo_ativo = db.Column(db.String(50), nullable=False)
@@ -115,7 +123,9 @@ class TransacaoCripto(db.Model):
     Registra operações de compra/venda de criptomoedas.
     A quantidade é Float (diferente dos demais) devido às frações de criptomoedas.
     """
+    # Identificador único da transação de criptomoeda (chave primária auto-incremento)
     id = db.Column(db.Integer, primary_key=True)
+    # Chave estrangeira associando a transação de cripto ao usuário dono da operação
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     tipo_ativo = db.Column(db.String(50), nullable=False)
     # Símbolo da criptomoeda (ex: BTC, ETH)

@@ -1,3 +1,6 @@
+# Módulo de inicialização da aplicação Nexus Trader
+# A factory create_app() monta todas as extensões, blueprints, comandos CLI e dados iniciais
+
 import logging
 import os
 from flask import Flask
@@ -6,7 +9,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 
-# Instâncias globais das extensões Flask (inicializadas sem app)
+# Instâncias globais das extensões Flask — criadas sem app porque seguem o padrão factory (init_app() depois)
 db = SQLAlchemy()          # ORM para banco de dados
 login_manager = LoginManager()  # Gerenciamento de sessão/autenticação
 csrf = CSRFProtect()       # Proteção contra CSRF em formulários
@@ -23,11 +26,12 @@ def create_app(config_name=None):
         config_name: Nome da configuração ('development', 'production').
                      Se None, lê da variável de ambiente FLASK_ENV.
     """
+    # Cria a instância Flask com caminhos explícitos para templates e estáticos na raiz do projeto (fora do pacote app/)
     app = Flask(
         __name__,
-        template_folder='../templates',   # Caminho relativo aos templates
-        static_folder='../static',        # Pasta de arquivos estáticos (CSS, JS)
-        static_url_path='/static',        # URL pública para arquivos estáticos
+        template_folder='../templates',
+        static_folder='../static',
+        static_url_path='/static',
     )
 
     # Define o nome da configuração: argumento > env var > 'default'
@@ -49,7 +53,7 @@ def create_app(config_name=None):
     login_manager.login_message = 'Faça login para acessar o sistema.'
     login_manager.login_message_category = 'error'
 
-    # Importa o modelo User (necessário para o user_loader abaixo)
+    # Importa User dentro da factory para evitar circular imports (app.models importa db, que só é inicializado aqui)
     from app.models import User
 
     @login_manager.user_loader
@@ -68,6 +72,7 @@ def create_app(config_name=None):
     from app.routes.lgpd import lgpd_bp
     from app.routes.importar import importar_bp
 
+    # Vincula todos os blueprints ao app — cada blueprint agrupa as rotas de uma área funcional (auth, BR, exterior, cripto, API, edição, perfil, LGPD, importação)
     app.register_blueprint(auth_bp)
     app.register_blueprint(brasil_bp)
     app.register_blueprint(exterior_bp)
@@ -100,6 +105,7 @@ def create_app(config_name=None):
     # Exibe instruções de recuperação de acesso no log se houver usuário padrão
     _exibir_instrucoes_acesso(app)
 
+    # Retorna a instância do Flask pronta para ser servida pelo servidor WSGI (Gunicorn, Waitress, ou o dev server)
     return app
 
 

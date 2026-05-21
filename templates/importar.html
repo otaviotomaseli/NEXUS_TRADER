@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Template: importar.html — Página de importação de notas de corretagem via CSV para cadastro em lote -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importar Nota de Corretagem — InvTrader</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <!-- Estilos CSS do tema escuro — variáveis de cor, cartões, formulários, botões e flash messages -->
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg-primary: #0b0d12; --bg-card: #161922;
@@ -47,8 +49,10 @@
 </head>
 <body>
     <div class="container">
+        <!-- Título principal e subtítulo explicativo da página -->
         <h1>Importar Nota de Corretagem</h1>
         <p class="sub">Faça upload de um arquivo CSV com suas transações para cadastro em lote.</p>
+        <!-- Bloco de mensagens flash — exibe feedbacks de sucesso ou erro retornados pelo servidor -->
         {% with msgs = get_flashed_messages(with_categories=true) %}
         {% if msgs %}
         {% for cat, msg in msgs %}
@@ -57,6 +61,7 @@
         {% endif %}
         {% endwith %}
         <div class="card">
+            <!-- Formulário de importação — seleciona o mercado e faz upload do arquivo CSV para processamento em lote -->
             <form action="{{ url_for('importar.importar_csv') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
@@ -72,9 +77,11 @@
                     <label>Arquivo CSV</label>
                     <input type="file" name="csv_file" accept=".csv" required>
                 </div>
+                <!-- Botão que envia o formulário e inicia o processo de importação -->
                 <button type="submit" class="btn btn-primary btn-block">Importar Transações</button>
             </form>
         </div>
+        <!-- Caixa informativa — documenta o formato esperado do CSV com colunas obrigatórias e opcionais -->
         <div class="info-box">
             <h3>Formato esperado do CSV</h3>
             <p>O arquivo deve conter as seguintes colunas (a primeira linha é o cabeçalho):</p>
@@ -88,6 +95,7 @@
                 <li><code>banco</code> — (opcional) Nome da corretora</li>
             </ul>
         </div>
+        <!-- Ações complementares: download do CSV modelo e retorno ao painel principal -->
         <div class="actions">
             <a href="{{ url_for('importar.baixar_modelo') }}" class="btn btn-secondary">Baixar CSV Modelo</a>
             <a href="{{ url_for('brasil.dashboard') }}" class="voltar">Voltar ao Painel</a>

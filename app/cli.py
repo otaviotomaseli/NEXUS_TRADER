@@ -1,3 +1,4 @@
+# click — biblioteca para criação de comandos CLI; with_appcontext — injeta o contexto da aplicação Flask nos comandos
 import click
 from flask.cli import with_appcontext
 

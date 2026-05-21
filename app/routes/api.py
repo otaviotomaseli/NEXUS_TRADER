@@ -30,16 +30,20 @@ logger = logging.getLogger(__name__)
 api_bp = Blueprint('api', __name__)
 
 
+# --- Endpoint de cotação em tempo real ---
 @api_bp.route('/api/cotacao/<ticker>')
 @login_required
 def api_cotacao(ticker):
     """Retorna a cotação atual de um ativo em formato JSON."""
+    # Busca o preço atual via serviço externo (Yahoo Finance ou similar)
     preco = buscar_preco(ticker)
     if preco is not None:
         return jsonify({'preco': preco})
+    # Retorna 0.0 com mensagem de erro caso o ativo não seja encontrado
     return jsonify({'preco': 0.0, 'error': 'Ativo não encontrado'})
 
 
+# --- Endpoint de análise técnica completa ---
 @api_bp.route('/api/analise/<pais>/<ticker>/<periodo>')
 @login_required
 def api_analise(pais, ticker, periodo):
@@ -49,11 +53,13 @@ def api_analise(pais, ticker, periodo):
     Inclui preços históricos, suporte, resistência, cruzamento
     de médias móveis (SMA9/SMA21) e compras do usuário no período.
     """
+    # Normaliza o ticker para maiúsculas sem espaços para busca consistente
     ticker_busca = ticker.upper().strip()
     ticker_db = ticker_busca
 
     try:
         # Obtém histórico conforme o mercado (Brasil, EUA ou Cripto)
+        # Cripto usa API específica; BR/US compartilham mesma fonte
         if pais == 'CRIPTO':
             resultado = buscar_historico_cripto(ticker_busca, periodo)
             if resultado is None:
@@ -63,6 +69,7 @@ def api_analise(pais, ticker, periodo):
             if resultado is None:
                 return jsonify({'error': 'Ativo não encontrado na base de dados global.'})
 
+        # Extrai as séries de preços do resultado
         dates = resultado['dates']
         prices = resultado['prices']
         highs = resultado.get('highs', prices)
@@ -73,6 +80,7 @@ def api_analise(pais, ticker, periodo):
         support = round(min(lows), 2)
 
         # Cálculo de médias móveis e sinais
+        # Converte os preços para DataFrame para usar o rolling window do pandas
         df = pd.DataFrame({'Close': prices})
         sma9 = df['Close'].rolling(window=9).mean()
         sma21 = df['Close'].rolling(window=21).mean()
@@ -81,14 +89,18 @@ def api_analise(pais, ticker, periodo):
         sell_signals = []
 
         # Gera sinais de compra/venda no cruzamento das médias SMA9 e SMA21
+        # Só calcula se houver dados suficientes para a janela de 21 períodos
         if len(prices) > 21:
             for i in range(21, len(prices)):
+                # Sinal de compra: SMA9 cruza SMA21 de baixo para cima
                 if sma9.iloc[i] > sma21.iloc[i] and sma9.iloc[i - 1] <= sma21.iloc[i - 1]:
                     buy_signals.append({'x': dates[i], 'y': prices[i]})
+                # Sinal de venda: SMA9 cruza SMA21 de cima para baixo
                 elif sma9.iloc[i] < sma21.iloc[i] and sma9.iloc[i - 1] >= sma21.iloc[i - 1]:
                     sell_signals.append({'x': dates[i], 'y': prices[i]})
 
         # Compras do usuário no período — consulta modelo adequado por país
+        # Cada mercado tem sua própria tabela no banco de dados
         user_purchases = []
         if pais == 'BR':
             compras_bd = Transacao.query.filter_by(
@@ -106,13 +118,16 @@ def api_analise(pais, ticker, periodo):
             compras_bd = []
 
         # Converte datas e preços das compras para o formato do gráfico
+        # A data é invertida (DD-MM-AAAA) para exibição e o preço unitário é calculado
         for c in compras_bd:
             y, m, d = c.data.split('-')
             data_formatada = f'{d}-{m}-{y}'
             preco_pago = round(c.valor_total / c.quantidade, 2) if c.quantidade > 0 else 0
+            # Só inclui compras em dias que existem no gráfico de preços
             if data_formatada in dates:
                 user_purchases.append({'x': data_formatada, 'y': preco_pago})
 
+        # Retorna todos os dados serializados em JSON para o frontend
         return jsonify({
             'dates': dates,
             'prices': prices,
@@ -124,11 +139,13 @@ def api_analise(pais, ticker, periodo):
             'ticker': ticker_db,
         })
 
+    # Captura qualquer exceção para evitar vazar detalhes internos para o cliente
     except Exception as e:
         logger.exception('Erro na análise técnica para %s/%s', pais, ticker)
         return jsonify({'error': 'Erro interno do servidor. Tente novamente mais tarde.'})
 
 
+# --- Endpoint de rentabilidade acumulada ---
 @api_bp.route('/api/rentabilidade')
 @login_required
 def api_rentabilidade():
@@ -141,10 +158,12 @@ def api_rentabilidade():
     """
     uid = current_user.id
 
+    # Busca todas as transações do usuário nos três mercados, ordenadas por data
     transacoes_br = Transacao.query.filter_by(user_id=uid).order_by(Transacao.data, Transacao.id).all()
     transacoes_us = TransacaoExterior.query.filter_by(user_id=uid).order_by(TransacaoExterior.data, TransacaoExterior.id).all()
     transacoes_c = TransacaoCripto.query.filter_by(user_id=uid).order_by(TransacaoCripto.data, TransacaoCripto.id).all()
 
+    # Consolida todas as transações em uma lista única com campos normalizados
     todas = []
     for t in transacoes_br:
         todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
@@ -152,8 +171,10 @@ def api_rentabilidade():
         todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
     for t in transacoes_c:
         todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
+    # Ordena cronologicamente para calcular o acumulado corretamente
     todas.sort(key=lambda x: x['data'])
 
+    # Agrupa por mês (YYYY-MM) e soma investimento bruto e lucro/prejuízo
     mensal = {}
     for t in todas:
         mes = t['data'][:7]
@@ -162,9 +183,11 @@ def api_rentabilidade():
         if t['tipo'] == 'Compra':
             mensal[mes]['investido'] += t['valor']
         else:
+            # Venda reduz o montante investido e adiciona o lucro ao resultado
             mensal[mes]['investido'] -= t['valor']
             mensal[mes]['resultado'] += t['lucro']
 
+    # Converte o acumulado mensal em séries cumulativas para o gráfico
     meses = sorted(mensal.keys())
     cum_investido = 0.0
     cum_resultado = 0.0
@@ -182,6 +205,7 @@ def api_rentabilidade():
         total_data.append(round(cum_investido + cum_resultado, 2))
 
     # Valor de mercado atual da carteira
+    # Função auxiliar que processa a carteira de um mercado e soma o valor atual
     def _valor_carteira(modelo, popular_fn):
         qs = modelo.query.filter_by(user_id=uid).order_by(modelo.id).all()
         c, _, _, _ = processar_carteira(qs, buscar_cotacao=False)
@@ -193,6 +217,7 @@ def api_rentabilidade():
         valor_us = _valor_carteira(TransacaoExterior, popular_precos_us)
         valor_c = _valor_carteira(TransacaoCripto, popular_precos_cripto)
     except Exception:
+        # Em caso de falha na cotação, assume zero para não quebrar o gráfico
         valor_br = valor_us = valor_c = 0
 
     return jsonify({

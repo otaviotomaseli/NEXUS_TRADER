@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Template: index.html — Página inicial de simulação de cálculo de imposto sobre operações financeiras -->
 <head>
     <meta charset="UTF-8">
     <title>Painel Trader Automático</title>
-    <style>
+    <!-- Estilos CSS básicos do formulário de simulação e do bloco de exibição de resultados -->
+<style>
         body { font-family: Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; padding: 50px; }
         .bloco { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 400px; margin: 10px; }
         input, select, button { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 20px; box-sizing: border-box; }
@@ -13,8 +15,10 @@
 </head>
 <body>
 
+    <!-- Bloco do formulário de simulação de operação financeira (ações e fundos imobiliários) -->
     <div class="bloco">
         <h2>Simular Operação</h2>
+        <!-- Formulário de simulação — seleciona tipo de ativo, operação e informa valores de compra e venda -->
         <form action="/calcular" method="POST">
             <label>Tipo de Ativo:</label>
             <select name="ativo" required>
@@ -34,10 +38,12 @@
             <label>Valor Total da Venda (R$):</label>
             <input type="number" step="0.01" name="venda" required placeholder="Ex: 300.00">
 
+            <!-- Botão que dispara o cálculo do imposto com base nos valores informados -->
             <button type="submit">Calcular Imposto</button>
         </form>
     </div>
 
+    <!-- Bloco de resultados — exibe regra aplicada, lucro da operação, imposto devido e status DARF -->
     {% if msg %}
     <div class="bloco resultado">
         <h3>Relatório:</h3>

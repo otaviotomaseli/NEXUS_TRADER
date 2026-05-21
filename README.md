@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/badge/Flask-3.0-000?logo=flask" alt="Flask">
   <img src="https://img.shields.io/badge/Python-3.12+-3776AB?logo=python" alt="Python">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow" alt="Status">
+  <img src="https://img.shields.io/badge/Status-Conclu%C3%ADdo-green" alt="Status">
 </p>
 
 <h1 align="center">🚀 Nexus Trader (InvTrader)</h1>

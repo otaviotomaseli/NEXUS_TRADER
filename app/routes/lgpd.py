@@ -13,16 +13,19 @@ logger = logging.getLogger(__name__)
 lgpd_bp = Blueprint('lgpd', __name__)
 
 
+# --- Página pública de política de privacidade ---
 @lgpd_bp.route('/privacidade')
 def privacidade():
     """Exibe a página pública de política de privacidade."""
     return render_template('privacidade.html')
 
 
+# --- Aceite dos termos de privacidade (LGPD) ---
 @lgpd_bp.route('/lgpd/termos', methods=['POST'])
 @login_required
 def aceitar_termos():
     """Registra o aceite do usuário aos termos de privacidade (LGPD)."""
+    # Marca o consentimento e registra o timestamp em UTC
     current_user.lgpd_consentimento = True
     current_user.lgpd_consentimento_data = datetime.now(timezone.utc)
     db.session.commit()
@@ -30,10 +33,12 @@ def aceitar_termos():
     return redirect(url_for('brasil.dashboard'))
 
 
+# --- Página de gerenciamento da conta ---
 @lgpd_bp.route('/lgpd/minha-conta')
 @login_required
 def minha_conta():
     """Exibe a página de gerenciamento de conta com total de registros armazenados."""
+    # Conta quantos registros o usuário possui em cada tabela de transações
     qtd_transacoes = Transacao.query.filter_by(user_id=current_user.id).count()
     qtd_us = TransacaoExterior.query.filter_by(user_id=current_user.id).count()
     qtd_cripto = TransacaoCripto.query.filter_by(user_id=current_user.id).count()
@@ -41,6 +46,7 @@ def minha_conta():
     return render_template('minha-conta.html', total_registros=total_registros)
 
 
+# --- Exportação de dados (portabilidade LGPD) ---
 @lgpd_bp.route('/lgpd/exportar')
 @login_required
 def exportar_dados():
@@ -74,7 +80,7 @@ def exportar_dados():
             'taxa_cripto': conf.taxa_cripto,
         })
 
-    # Exporta as transações do mercado brasileiro
+    # Exporta as transações do mercado brasileiro (B3)
     for t in Transacao.query.filter_by(user_id=current_user.id).all():
         dados['transacoes_br'].append({
             'id': t.id, 'tipo_ativo': t.tipo_ativo, 'codigo': t.codigo,
@@ -104,9 +110,11 @@ def exportar_dados():
             'darf': t.darf, 'banco': t.banco,
         })
 
+    # Retorna como JSON com header forcing download como attachment
     return jsonify(dados, ensure_ascii=False), 200, {'Content-Disposition': 'attachment; filename=meus_dados.json'}
 
 
+# --- Exclusão de conta (direito ao esquecimento LGPD) ---
 @lgpd_bp.route('/lgpd/excluir', methods=['POST'])
 @login_required
 def excluir_conta():
@@ -121,7 +129,7 @@ def excluir_conta():
 
     uid = current_user.id
 
-    # Remove todos os registros relacionados ao usuário
+    # Remove todos os registros relacionados ao usuário das três tabelas de transações
     Configuracao.query.filter_by(user_id=uid).delete()
     Transacao.query.filter_by(user_id=uid).delete()
     TransacaoExterior.query.filter_by(user_id=uid).delete()
@@ -136,6 +144,7 @@ def excluir_conta():
             os.remove(caminho)
 
     # Anonimiza o registro do usuário (não deleta da tabela para integridade referencial)
+    # Isso previne erros de chave estrangeira em outras tabelas que referenciam o user_id
     current_user.username = f'usuario_excluido_{uid}'
     current_user.password = ''
     current_user.avatar = None

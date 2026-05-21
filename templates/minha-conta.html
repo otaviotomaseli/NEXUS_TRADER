@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Template: minha-conta.html — Página de gerenciamento da conta com dados pessoais, LGPD e exclusão -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Conta — InvTrader</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <!-- Estilos CSS da página Minha Conta — cartões, linhas de informação, tags de status e botões -->
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg-primary: #0b0d12; --bg-card: #161922; --bg-hover: #1c1f2c;
@@ -78,8 +80,10 @@
 </head>
 <body>
     <div class="container">
+        <!-- Link de navegação: retorno ao painel principal do sistema -->
         <a href="/dashboard" class="btn-voltar">&larr; Voltar ao painel</a>
 
+        <!-- Bloco de mensagens flash — feedback de ações como aceite de termos, exportação ou exclusão -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, m in messages %}
@@ -88,31 +92,39 @@
             {% endif %}
         {% endwith %}
 
+        <!-- Cartão de dados da conta — exibe informações cadastrais e status LGPD do usuário logado -->
         <div class="card">
             <h1>Minha Conta</h1>
             <p class="subtitle">Gerencie seus dados pessoais em conformidade com a LGPD.</p>
 
+            <!-- Subtítulo da seção de dados cadastrais do usuário -->
             <h2>Dados da Conta</h2>
+            <!-- Linha: nome de usuário cadastrado -->
             <div class="info-row">
                 <span class="info-label">Usuário</span>
                 <span class="info-value">{{ current_user.username }}</span>
             </div>
+            <!-- Linha: data de criação da conta -->
             <div class="info-row">
                 <span class="info-label">Cadastrado em</span>
                 <span class="info-value">{{ current_user.data_cadastro.strftime('%d/%m/%Y %H:%M') if current_user.data_cadastro else '—' }}</span>
             </div>
+            <!-- Linha: data e hora do último acesso ao sistema -->
             <div class="info-row">
                 <span class="info-label">Último login</span>
                 <span class="info-value">{{ current_user.data_ultimo_login.strftime('%d/%m/%Y %H:%M') if current_user.data_ultimo_login else '—' }}</span>
             </div>
+            <!-- Linha: indica se o usuário possui foto de perfil (avatar) -->
             <div class="info-row">
                 <span class="info-label">Avatar</span>
                 <span class="info-value">{{ 'Sim' if current_user.avatar else 'Não' }}</span>
             </div>
+            <!-- Linha: quantidade total de transações financeiras registradas no sistema -->
             <div class="info-row">
                 <span class="info-label">Total de registros financeiros</span>
                 <span class="info-value">{{ total_registros }}</span>
             </div>
+            <!-- Linha: status do consentimento LGPD (aceito com data ou pendente) -->
             <div class="info-row">
                 <span class="info-label">Consentimento LGPD</span>
                 <span class="info-value">
@@ -128,6 +140,7 @@
             </div>
         </div>
 
+        <!-- Cartão de termos de privacidade — permite ao usuário aceitar os termos LGPD -->
         <div class="card">
             <h2>Termos de Privacidade</h2>
             <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
@@ -135,6 +148,7 @@
                 para entender como seus dados são tratados.
             </p>
             {% if not current_user.lgpd_consentimento %}
+            <!-- Formulário de aceitação dos termos de privacidade (LGPD) -->
             <form action="/lgpd/termos" method="POST">
                 <button type="submit" class="btn btn-primary btn-block">Aceitar Termos de Privacidade</button>
             </form>
@@ -145,6 +159,7 @@
             {% endif %}
         </div>
 
+        <!-- Cartão de portabilidade — exportação de todos os dados do usuário em formato JSON -->
         <div class="card">
             <h2>Portabilidade de Dados</h2>
             <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
@@ -153,6 +168,7 @@
             <a href="/lgpd/exportar" class="btn btn-success btn-block">Exportar Meus Dados (JSON)</a>
         </div>
 
+        <!-- Cartão de exclusão da conta — ação irreversível que remove permanentemente todos os dados -->
         <div class="card" style="border-color: rgba(239,68,68,0.3);">
             <h2 style="color: var(--red);">Excluir Conta</h2>
             <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6; margin-bottom: 8px;">
@@ -164,6 +180,7 @@
                 <li>Avatar e dados de perfil</li>
                 <li>Registros de acesso</li>
             </ul>
+            <!-- Formulário de exclusão definitiva — requer confirmação via checkbox e diálogo JavaScript de confirmação -->
             <form action="/lgpd/excluir" method="POST" onsubmit="return confirm('ATENÇÃO: Esta ação é irreversível. Todos os seus dados serão excluídos permanentemente. Deseja continuar?');">
                 <div class="checkbox-group">
                     <input type="checkbox" id="confirm-exclusao" required>

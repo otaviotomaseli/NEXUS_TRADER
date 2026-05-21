@@ -1,20 +1,30 @@
 """Blueprint de operações Brasil — dashboard, compra, venda, configurações e exclusão de ativos B3."""
+# Logger para registrar eventos e erros específicos deste módulo
 import logging
+# Função monthrange: obtém o número de dias de um mês (usado para data de vencimento de DARF)
 from calendar import monthrange
 
+# Flask: ferramentas para Blueprint, renderização, redirecionamentos, flash messages e request
 from flask import Blueprint, render_template, redirect, url_for, flash, request
+# Flask-Login: protege rotas com @login_required e fornece o usuário logado via current_user
 from flask_login import login_required, current_user
 
 from app import db
+# Todos os modelos de transação e configuração usados no dashboard
 from app.models import Transacao, TransacaoExterior, TransacaoCripto, Configuracao
+# Serviços: verifica status do mercado (aberto/fechado) e obtém cotações
 from app.services.cotacao import status_mercado, mercado_aberto
+# Serviços: processa transações em carteira, popula preços, gera resumo de DARFs
 from app.services.carteira import (
     processar_carteira, popular_precos_br, popular_precos_us,
     popular_precos_cripto, gerar_resumo_darfs,
 )
+# Serviço fiscal: calcula imposto de venda para ativos B3
 from app.services.imposto import calcular_imposto_venda_br
 
+# Logger específico para depuração das rotas Brasil
 logger = logging.getLogger(__name__)
+# Cria o blueprint 'brasil' — agrupa as rotas do mercado nacional
 brasil_bp = Blueprint('brasil', __name__)
 
 
@@ -27,40 +37,54 @@ def dashboard():
     popular preços atualizados, soma totais de lucro/perda e prepara os dados
     dos DARFs (Brasil e cripto) e do imposto de renda (exterior).
     """
+    # Carrega as configurações fiscais personalizadas do usuário logado
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
-    # Verifica se cada mercado está aberto no momento
+    # Verifica se cada mercado está aberto no momento (exibe indicador no template)
     mercado_br = status_mercado('BR')
     mercado_us = status_mercado('US')
     mercado_cripto = status_mercado('CRIPTO')
 
     # ---------- ATIVOS BRASIL (B3) ----------
+    # Carrega todas as transações B3 do usuário ordenadas por ID (ordem de inserção)
     transacoes = Transacao.query.filter_by(
         user_id=current_user.id,
     ).order_by(Transacao.id).all()
-    # Processa as transações para obter carteira, vendas e compras
+    # Processa as transações para obter carteira ativa, lista de vendas e compras (sem buscar cotações aqui)
     carteira_ativa, _, vendas, compras = processar_carteira(transacoes, buscar_cotacao=False)
+    # Popula os preços atualizados de cada ativo na carteira consultando fonte externa
     popular_precos_br(carteira_ativa)
+    # Soma o valor atual de mercado de todos os ativos na carteira
     saldo_atual_b3 = sum(v['valor_atual'] for v in carteira_ativa.values())
+    # Soma o custo total de aquisição de todos os ativos na carteira
     total_investido = sum(v['custo_total'] for v in carteira_ativa.values())
+    # Soma apenas lucros realizados (vendas com lucro > 0)
     total_lucro_realizado = sum(v.lucro_perda for v in vendas if v.lucro_perda > 0)
+    # Soma apenas perdas realizadas (vendas com lucro < 0)
     total_perda_realizada = sum(v.lucro_perda for v in vendas if v.lucro_perda < 0)
+    # Extrai anos únicos das transações para filtrar no frontend, ordenados do mais recente
     anos_br = sorted(list(set(t.data.split('-')[0] for t in transacoes)), reverse=True)
+    # Gera a lista de DARFs agrupados por mês para as vendas realizadas
     lista_darfs_br = gerar_resumo_darfs(vendas)
 
-    # Calcula a data de vencimento de cada DARF (último dia do mês seguinte)
+    # Calcula a data de vencimento de cada DARF (último dia do mês seguinte à venda)
     for v in vendas:
         if v.imposto > 0:
             y, m, d = map(int, v.data.split('-'))
+            # Avança um mês (se dezembro, vai para janeiro do ano seguinte)
             y_v, m_v = (y + 1, 1) if m == 12 else (y, m + 1)
+            # Obtém o último dia do mês de vencimento
             _, last = monthrange(y_v, m_v)
             v.vencimento_darf = f'{last:02d}/{m_v:02d}/{y_v}'
         else:
+            # Se não há imposto (venda com prejuízo ou dentro da isenção), não há DARF a pagar
             v.vencimento_darf = '-'
 
     # ---------- ATIVOS EXTERIOR (US) ----------
+    # Carrega todas as transações do exterior (EUA) do usuário
     transacoes_us = TransacaoExterior.query.filter_by(
         user_id=current_user.id,
     ).order_by(TransacaoExterior.id).all()
+    # Processa carteira, vendas e compras do exterior
     carteira_us, _, vendas_us, compras_us = processar_carteira(transacoes_us, buscar_cotacao=False)
     popular_precos_us(carteira_us)
     saldo_atual_us = sum(v['valor_atual'] for v in carteira_us.values())
@@ -74,19 +98,23 @@ def dashboard():
     for v in vendas_us:
         ano = v.data[:4]
         if ano not in resumo_impostos_us:
+            # Inicializa o resumo do ano com valores zerados
             resumo_impostos_us[ano] = {
                 'ano': ano, 'lucro_total': 0.0, 'imposto_total': 0.0,
+                # O vencimento é na declaração de IRPF do ano seguinte
                 'vencimento': f"Na Declaração IRPF {int(ano) + 1}",
             }
         resumo_impostos_us[ano]['lucro_total'] += v.lucro_perda
         if v.imposto > 0:
             resumo_impostos_us[ano]['imposto_total'] += v.imposto
+    # Filtra apenas anos com imposto devido e ordena do mais recente
     lista_impostos_us = sorted(
         [d for d in resumo_impostos_us.values() if d['imposto_total'] > 0],
         key=lambda x: x['ano'], reverse=True,
     )
 
     # ---------- CRIPTOMOEDAS ----------
+    # Carrega todas as transações de criptomoedas do usuário
     transacoes_cripto = TransacaoCripto.query.filter_by(
         user_id=current_user.id,
     ).order_by(TransacaoCripto.id).all()
@@ -101,6 +129,7 @@ def dashboard():
     anos_cripto = sorted(list(set(t.data.split('-')[0] for t in transacoes_cripto)), reverse=True)
     lista_darfs_cripto = gerar_resumo_darfs(vendas_cripto)
 
+    # Renderiza o template dashboard.html com todos os dados calculados
     return render_template(
         'dashboard.html', nome=current_user.username, conf=conf,
         mercado_br=mercado_br, mercado_us=mercado_us, mercado_cripto=mercado_cripto,
@@ -131,12 +160,12 @@ def dashboard():
 @login_required
 def comprar():
     """Registra uma nova compra de ativo B3."""
-    # Impede a compra se o mercado B3 estiver fechado
+    # Impede a compra se o mercado B3 estiver fechado (evita registro de operações em horário não permitido)
     if not mercado_aberto('BR'):
         flash('MERCADO FECHADO: Não é possível comprar na B3 agora.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
-    # Valida os campos numéricos do formulário
+    # Valida os campos numéricos do formulário: quantidade deve ser inteiro e valor deve ser positivo
     try:
         qtd = int(request.form.get('quantidade', 0))
         valor = float(request.form.get('valor_compra', 0))
@@ -146,7 +175,7 @@ def comprar():
         flash('Dados inválidos. Verifique quantidade e valor.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
-    # Cria e persiste o registro da compra
+    # Cria e persiste o registro da compra no banco de dados
     nova_compra = Transacao(
         user_id=current_user.id,
         tipo_ativo=request.form.get('tipo', '').strip(),
@@ -167,10 +196,12 @@ def comprar():
 @login_required
 def vender():
     """Registra uma nova venda de ativo B3, calcula lucro e imposto devido."""
+    # Bloqueia venda se o mercado B3 estiver fechado
     if not mercado_aberto('BR'):
         flash('MERCADO FECHADO: Não é possível vender na B3 agora.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
+    # Extrai e sanitiza os campos de código e tipo do ativo do formulário
     codigo = request.form.get('codigo', '').strip()
     tipo_ativo = request.form.get('tipo_ativo', '').strip()
     try:
@@ -182,10 +213,12 @@ def vender():
         flash('Dados inválidos. Verifique quantidade e valor.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
+    # Tipo de operação (swing_trade ou day_trade) — impacta alíquota de IR
     operacao = request.form.get('operacao', 'swing_trade')
+    # Carrega as configurações fiscais do usuário (isenção, alíquotas)
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
 
-    # Recalcula o saldo atual do ativo (soma compras, subtrai vendas anteriores)
+    # Recalcula o saldo atual do ativo (soma compras, subtrai vendas anteriores) para obter o preço médio
     transacoes = Transacao.query.filter_by(
         user_id=current_user.id, codigo=codigo,
     ).all()
@@ -196,16 +229,18 @@ def vender():
             qtd_atual += t.quantidade
             custo_atual += t.valor_total
         else:
+            # Para venda: baixa pelo preço médio ponderado (PM) calculado até o momento
             pm = custo_atual / qtd_atual if qtd_atual > 0 else 0
             qtd_atual -= t.quantidade
             custo_atual -= (t.quantidade * pm)
 
-    # Calcula preço médio, lucro/prejuízo e o imposto devido
+    # Calcula preço médio da venda e o lucro/prejuízo (valor da venda - custo das cotas vendidas)
     pm_venda = custo_atual / qtd_atual if qtd_atual > 0 else 0
     lucro = valor_venda - (qtd_vendida * pm_venda)
+    # Usa o serviço de imposto para calcular o valor devido e o DARF correspondente
     imposto, darf = calcular_imposto_venda_br(lucro, valor_venda, tipo_ativo, operacao, conf)
 
-    # Cria e persiste o registro da venda
+    # Cria e persiste o registro da venda com lucro, imposto e DARF calculados
     nova_venda = Transacao(
         user_id=current_user.id, tipo_ativo=tipo_ativo, codigo=codigo,
         tipo_transacao='Venda', quantidade=qtd_vendida, valor_total=valor_venda,
@@ -222,7 +257,7 @@ def vender():
 @login_required
 def salvar_config():
     """Salva as alíquotas e faixas de isenção nas configurações do usuário."""
-    # Lê e converte os campos do formulário, garantindo valores positivos
+    # Lê e converte os campos do formulário, garantindo valores positivos com abs()
     try:
         isencao = abs(float(request.form.get('isencao', 20000)))
         swing = abs(float(request.form.get('swing', 15))) / 100
@@ -235,7 +270,7 @@ def salvar_config():
         flash('Valores inválidos nas configurações.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
-    # Atualiza o registro de configuração do usuário no banco
+    # Atualiza o registro de configuração do usuário no banco com os novos valores
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
     conf.isencao_br = isencao
     conf.taxa_swing_br = swing
@@ -253,9 +288,11 @@ def salvar_config():
 @login_required
 def excluir_br(id):
     """Exclui uma transação B3 pelo ID, desde que pertença ao usuário logado."""
+    # Busca a transação pelo ID; só a exclui se ela existir e pertencer ao usuário atual
     t = Transacao.query.get(id)
     if t and t.user_id == current_user.id:
         db.session.delete(t)
         db.session.commit()
         flash('Lançamento excluído.', 'success')
+    # Redireciona de volta para a página anterior ou para o dashboard como fallback
     return redirect(request.referrer or url_for('brasil.dashboard'))

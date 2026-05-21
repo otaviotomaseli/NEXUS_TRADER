@@ -1,11 +1,17 @@
+<!-- ============================================================ -->
+<!-- Documento: login.html                                       -->
+<!-- Descrição: Página de autenticação do sistema InvTrader      -->
+<!-- ============================================================ -->
 <!DOCTYPE html>
 <html lang="pt-br">
+<!-- Cabeçalho: metadados, título e carregamento de fontes -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvTrader — Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Estilos CSS do login — tema escuro, moeda animada 3D e grid decorativo -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -340,13 +346,16 @@
     </style>
 </head>
 <body>
+    <!-- Container principal que divide a tela em painel de marca (esquerda) e formulário (direita) -->
     <div class="login-wrapper">
+        <!-- Painel lateral esquerdo — logotipo animado, título e lista de funcionalidades do sistema -->
         <div class="login-brand">
             <div class="bg-grid"></div>
             <div class="brand-content">
                 <div class="logo-icon"><div class="logo-wrapper"><div class="logo-coin"><div class="coin-inner">N</div></div></div></div>
                 <h1>Controle seus investimentos em um só lugar</h1>
                 <p>Dashboard unificado para B3, exterior e criptomoedas com cálculo automático de impostos e análise técnica integrada.</p>
+                <!-- Lista de funcionalidades em destaque com bullets -->
                 <div class="features">
                     <div class="feature-item"><span class="dot"></span> Acompanhamento em tempo real</div>
                     <div class="feature-item"><span class="dot"></span> Cálculo automático de DARF</div>
@@ -356,12 +365,15 @@
             </div>
         </div>
 
+        <!-- Painel lateral direito — formulário de login com credenciais -->
         <div class="login-form-area">
+            <!-- Cartão centralizado contendo logo, título, flash messages e formulário -->
             <div class="login-card">
                 <div class="logo-icon"><div class="logo-wrapper"><div class="logo-coin"><div class="coin-inner">N</div></div></div></div>
                 <h2>Acessar plataforma</h2>
                 <p class="subtitle">Entre com suas credenciais para continuar</p>
 
+                <!-- Mensagens Flash — exibe erros de autenticação retornados pelo servidor -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, m in messages %}
@@ -370,19 +382,24 @@
                     {% endif %}
                 {% endwith %}
 
+                <!-- Formulário de autenticação — envia usuário e senha via POST para /login -->
                 <form action="/login" method="POST">
                     {{ form.hidden_tag() }}
+                    <!-- Campo de nome de usuário -->
                     <div class="form-group">
                         <label for="username">Usuário</label>
                         <input type="text" name="username" id="username" placeholder="Seu usuário" required autocomplete="off">
                     </div>
+                    <!-- Campo de senha -->
                     <div class="form-group">
                         <label for="password">Senha</label>
                         <input type="password" name="password" id="password" placeholder="Sua senha" required>
                     </div>
+                    <!-- Botão de envio do formulário -->
                     <button type="submit" class="btn-submit">Entrar</button>
                 </form>
 
+                <!-- Rodapé com a marca do sistema -->
                 <p class="footer-text">InvTrader &mdash; Gestão de Investimentos</p>
             </div>
         </div>
