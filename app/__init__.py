@@ -66,6 +66,7 @@ def create_app(config_name=None):
     from app.routes.editar import editar_bp
     from app.routes.perfil import perfil_bp
     from app.routes.lgpd import lgpd_bp
+    from app.routes.importar import importar_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(brasil_bp)
@@ -75,6 +76,7 @@ def create_app(config_name=None):
     app.register_blueprint(editar_bp)
     app.register_blueprint(perfil_bp)
     app.register_blueprint(lgpd_bp)
+    app.register_blueprint(importar_bp)
 
     # Configura o logging global da aplicação
     logging.basicConfig(

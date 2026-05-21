@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Nota de Corretagem — InvTrader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #0b0d12; --bg-card: #161922;
+            --border: #222639; --text-primary: #e4e7ed;
+            --text-secondary: #7f8397; --text-muted: #494d5e;
+            --accent: #3b82f6; --green: #22c55e; --green-bg: rgba(34,197,94,0.12);
+            --red: #ef4444; --red-bg: rgba(239,68,68,0.12);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); padding: 40px; }
+        .container { max-width: 780px; margin: 0 auto; }
+        h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .sub { color: var(--text-secondary); margin-bottom: 32px; font-size: 14px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 20px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input[type="file"] { width: 100%; padding: 12px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; }
+        select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+        .form-group { margin-bottom: 20px; }
+        .btn { padding: 12px 24px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: 0.15s; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border); text-decoration: none; display: inline-block; text-align: center; }
+        .btn-secondary:hover { background: var(--border); color: var(--text-primary); }
+        .btn-block { width: 100%; }
+        .flash { padding: 14px 18px; margin-bottom: 20px; border-radius: 10px; font-size: 14px; font-weight: 500; }
+        .flash-success { background: var(--green-bg); border: 1px solid rgba(34,197,94,0.2); color: var(--green); }
+        .flash-error { background: var(--red-bg); border: 1px solid rgba(239,68,68,0.2); color: var(--red); }
+        .info-box { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .info-box h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .info-box code { background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent); }
+        .info-box p { font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+        .info-box ul { list-style: none; padding: 0; margin-top: 8px; }
+        .info-box ul li { padding: 4px 0 4px 16px; position: relative; font-size: 13px; color: var(--text-secondary); }
+        .info-box ul li::before { content: ''; position: absolute; left: 0; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+        .actions { display: flex; gap: 12px; margin-top: 24px; }
+        .voltar { display: inline-block; padding: 10px 20px; color: var(--text-secondary); text-decoration: none; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; transition: 0.15s; }
+        .voltar:hover { background: var(--bg-card); color: var(--text-primary); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Importar Nota de Corretagem</h1>
+        <p class="sub">Faça upload de um arquivo CSV com suas transações para cadastro em lote.</p>
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+        {% if msgs %}
+        {% for cat, msg in msgs %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <div class="card">
+            <form action="{{ url_for('importar.importar_csv') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label>Mercado</label>
+                    <select name="mercado" required>
+                        <option value="">Selecione...</option>
+                        <option value="BR">Brasil (B3)</option>
+                        <option value="US">Exterior (EUA)</option>
+                        <option value="CRIPTO">Criptomoedas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Arquivo CSV</label>
+                    <input type="file" name="csv_file" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Importar Transações</button>
+            </form>
+        </div>
+        <div class="info-box">
+            <h3>Formato esperado do CSV</h3>
+            <p>O arquivo deve conter as seguintes colunas (a primeira linha é o cabeçalho):</p>
+            <ul>
+                <li><code>data</code> — Data da operação no formato <strong>AAAA-MM-DD</strong></li>
+                <li><code>tipo_ativo</code> — Tipo do ativo: <strong>acao, fii, stock, reit, bitcoin, etc.</strong></li>
+                <li><code>codigo</code> — Ticker do ativo (ex: <strong>PETR4, AAPL, BTC</strong>)</li>
+                <li><code>tipo_transacao</code> — <strong>Compra</strong> ou <strong>Venda</strong></li>
+                <li><code>quantidade</code> — Quantidade negociada (inteiro para BR/US, decimal para CRIPTO)</li>
+                <li><code>valor_total</code> — Valor total da operação em R$ (BR/CRIPTO) ou US$ (US)</li>
+                <li><code>banco</code> — (opcional) Nome da corretora</li>
+            </ul>
+        </div>
+        <div class="actions">
+            <a href="{{ url_for('importar.baixar_modelo') }}" class="btn btn-secondary">Baixar CSV Modelo</a>
+            <a href="{{ url_for('brasil.dashboard') }}" class="voltar">Voltar ao Painel</a>
+        </div>
+    </div>
+</body>
+</html>

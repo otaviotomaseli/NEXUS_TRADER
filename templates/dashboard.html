@@ -878,6 +878,12 @@
             <button class="nav-item" onclick="abrirAba('configuracoes', this)">
                 <span class="ico">*</span> Configurações
             </button>
+            <button class="nav-item" onclick="abrirAba('rentabilidade', this)">
+                <span class="ico">~</span> Rentabilidade
+            </button>
+            <a href="/importar/" class="nav-item" style="text-decoration:none;display:flex;">
+                <span class="ico">+</span> Importar CSV
+            </a>
         </div>
 
         <div class="sidebar-footer">
@@ -894,6 +900,9 @@
             </div>
             <a href="/lgpd/minha-conta" style="display:block;padding:10px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;text-align:center;margin-bottom:8px;transition:0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
                 Minha Conta (LGPD)
+            </a>
+            <a href="/relatorio-pdf" style="display:block;padding:10px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);text-decoration:none;font-size:13px;font-weight:500;text-align:center;margin-bottom:8px;transition:0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                Exportar Relatório (PDF)
             </a>
             <a href="/logout" class="btn-logout">Sair</a>
         </div>
@@ -1354,6 +1363,38 @@
             </div>
         </div>
 
+        <!-- ===== RENTABILIDADE ===== -->
+        <div id="rentabilidade" class="tab">
+            <h1>Rentabilidade Acumulada</h1>
+            <div class="grid-cards" id="rentabilidade-cards">
+                <div class="card">
+                    <h3>Total Investido</h3>
+                    <div class="valor" id="rentab-investido">R$ 0,00</div>
+                </div>
+                <div class="card">
+                    <h3>Resultado (Realizado)</h3>
+                    <div class="valor" id="rentab-resultado">R$ 0,00</div>
+                </div>
+                <div class="card">
+                    <h3>Valor Atual da Carteira</h3>
+                    <div class="valor" id="rentab-atual">R$ 0,00</div>
+                </div>
+                <div class="card">
+                    <h3>Rentabilidade Total</h3>
+                    <div class="valor" id="rentab-pct">0%</div>
+                </div>
+            </div>
+            <div class="card full" style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Evolução Patrimonial</h3>
+                <div style="height: 380px; position: relative;">
+                    <canvas id="graficoRentabilidade"></canvas>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: var(--text-muted); text-align: center;">
+                Gráfico baseado no valor investido líquido e lucros realizados mês a mês.
+            </p>
+        </div>
+
         <!-- ===== DASHBOARD BR ===== -->
         <div id="dashboard" class="tab active">
             <h1>Painel — Brasil (B3)</h1>
@@ -1727,6 +1768,9 @@
             if (nomeAba === 'dashboard-cripto') {
                 buscarLiveCripto();
             }
+            if (nomeAba === 'rentabilidade') {
+                carregarRentabilidade();
+            }
         }
 
         // ===== CRIPTO LIVE =====
@@ -1875,6 +1919,76 @@
                 document.getElementById('trader-loading').style.display = 'none';
                 document.getElementById('trader-error').textContent = 'Erro ao conectar com a base de dados.';
                 document.getElementById('trader-error').style.display = 'block';
+            }
+        }
+
+        // ===== RENTABILIDADE =====
+        async function carregarRentabilidade() {
+            const el = document.getElementById('graficoRentabilidade');
+            if (!el) return;
+            try {
+                const r = await fetch('/api/rentabilidade');
+                const d = await r.json();
+                if (!d.labels || !d.labels.length) {
+                    document.getElementById('rentabilidade-cards').innerHTML = '<div class="card full" style="text-align:center;padding:40px;color:var(--text-muted);">Nenhuma transação encontrada. Cadastre compras e vendas para ver a evolução.</div>';
+                    return;
+                }
+                document.getElementById('rentab-investido').textContent = 'R$ ' + d.investido[d.investido.length-1].toFixed(2);
+                const res = d.resultado[d.resultado.length-1];
+                document.getElementById('rentab-resultado').innerHTML = '<span class="' + (res >= 0 ? 'positivo' : 'negativo') + '">R$ ' + res.toFixed(2) + '</span>';
+                document.getElementById('rentab-atual').textContent = 'R$ ' + d.valor_portfolio_atual.toFixed(2);
+                const pct = d.investido[d.investido.length-1] > 0 ? ((d.total[d.total.length-1] / d.investido[d.investido.length-1] - 1) * 100) : 0;
+                document.getElementById('rentab-pct').innerHTML = '<span class="' + (pct >= 0 ? 'positivo' : 'negativo') + '">' + pct.toFixed(2) + '%</span>';
+                new Chart(el, {
+                    type: 'line',
+                    data: {
+                        labels: d.labels,
+                        datasets: [
+                            {
+                                label: 'Total Investido',
+                                data: d.investido,
+                                borderColor: '#7f8397',
+                                backgroundColor: 'rgba(127,131,151,0.06)',
+                                borderWidth: 2,
+                                borderDash: [5,5],
+                                fill: false,
+                                tension: 0.2,
+                                pointRadius: 2,
+                            },
+                            {
+                                label: 'Valor Total (Investido + Resultado)',
+                                data: d.total,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59,130,246,0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.2,
+                                pointRadius: 2,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { boxWidth: 12, padding: 16, font: {size: 12}, color: '#7f8397' } },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(ctx) { return ctx.dataset.label + ': R$ ' + ctx.parsed.y.toFixed(2); }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { ticks: { maxTicksLimit: 14, font: {size: 10}, color: '#7f8397' }, grid: { display: false } },
+                            y: {
+                                grid: { color: 'rgba(255,255,255,0.04)' },
+                                ticks: { font: {size: 11}, callback: function(v) { return 'R$ ' + v.toFixed(0); } }
+                            }
+                        }
+                    }
+                });
+            } catch(e) {
+                document.getElementById('rentabilidade-cards').innerHTML = '<div class="card full" style="text-align:center;padding:40px;color:var(--red);">Erro ao carregar dados de rentabilidade.</div>';
             }
         }
 

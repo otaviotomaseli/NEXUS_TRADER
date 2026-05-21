@@ -19,6 +19,10 @@ from app.models import Transacao, TransacaoExterior, TransacaoCripto
 from app.services.cotacao import (
     buscar_preco, buscar_historico_br, buscar_historico_cripto,
 )
+from app.services.carteira import (
+    processar_carteira, popular_precos_br, popular_precos_us,
+    popular_precos_cripto, gerar_resumo_darfs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -123,3 +127,78 @@ def api_analise(pais, ticker, periodo):
     except Exception as e:
         logger.exception('Erro na análise técnica para %s/%s', pais, ticker)
         return jsonify({'error': 'Erro interno do servidor. Tente novamente mais tarde.'})
+
+
+@api_bp.route('/api/rentabilidade')
+@login_required
+def api_rentabilidade():
+    """
+    Retorna dados de rentabilidade acumulada ao longo do tempo.
+
+    Consolida todas as transações (BR, US, Cripto) do usuário,
+    calcula o valor acumulado investido e o resultado (investido + lucro)
+    em cada mês, além do valor de mercado atual da carteira.
+    """
+    uid = current_user.id
+
+    transacoes_br = Transacao.query.filter_by(user_id=uid).order_by(Transacao.data, Transacao.id).all()
+    transacoes_us = TransacaoExterior.query.filter_by(user_id=uid).order_by(TransacaoExterior.data, TransacaoExterior.id).all()
+    transacoes_c = TransacaoCripto.query.filter_by(user_id=uid).order_by(TransacaoCripto.data, TransacaoCripto.id).all()
+
+    todas = []
+    for t in transacoes_br:
+        todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
+    for t in transacoes_us:
+        todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
+    for t in transacoes_c:
+        todas.append({'data': t.data, 'tipo': t.tipo_transacao, 'valor': t.valor_total, 'lucro': t.lucro_perda or 0})
+    todas.sort(key=lambda x: x['data'])
+
+    mensal = {}
+    for t in todas:
+        mes = t['data'][:7]
+        if mes not in mensal:
+            mensal[mes] = {'investido': 0.0, 'resultado': 0.0}
+        if t['tipo'] == 'Compra':
+            mensal[mes]['investido'] += t['valor']
+        else:
+            mensal[mes]['investido'] -= t['valor']
+            mensal[mes]['resultado'] += t['lucro']
+
+    meses = sorted(mensal.keys())
+    cum_investido = 0.0
+    cum_resultado = 0.0
+    labels = []
+    investido_data = []
+    resultado_data = []
+    total_data = []
+
+    for m in meses:
+        cum_investido += mensal[m]['investido']
+        cum_resultado += mensal[m]['resultado']
+        labels.append(m)
+        investido_data.append(round(cum_investido, 2))
+        resultado_data.append(round(cum_resultado, 2))
+        total_data.append(round(cum_investido + cum_resultado, 2))
+
+    # Valor de mercado atual da carteira
+    def _valor_carteira(modelo, popular_fn):
+        qs = modelo.query.filter_by(user_id=uid).order_by(modelo.id).all()
+        c, _, _, _ = processar_carteira(qs, buscar_cotacao=False)
+        popular_fn(c)
+        return sum(v['valor_atual'] for v in c.values())
+
+    try:
+        valor_br = _valor_carteira(Transacao, popular_precos_br)
+        valor_us = _valor_carteira(TransacaoExterior, popular_precos_us)
+        valor_c = _valor_carteira(TransacaoCripto, popular_precos_cripto)
+    except Exception:
+        valor_br = valor_us = valor_c = 0
+
+    return jsonify({
+        'labels': labels,
+        'investido': investido_data,
+        'resultado': resultado_data,
+        'total': total_data,
+        'valor_portfolio_atual': round(valor_br + valor_us + valor_c, 2),
+    })

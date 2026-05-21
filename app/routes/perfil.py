@@ -3,7 +3,11 @@
 import os
 import uuid
 from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from io import BytesIO
+from datetime import date
+
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, make_response
+from fpdf import FPDF
 from flask_login import login_required, current_user
 from app import db
 
@@ -98,3 +102,174 @@ def remover_avatar():
         db.session.commit()
         flash('Foto de perfil removida.', 'success')
     return redirect(url_for('brasil.dashboard'))
+
+
+@perfil_bp.route('/relatorio-pdf')
+@login_required
+def relatorio_pdf():
+    """Gera e retorna um relatório PDF com o resumo da carteira e DARFs."""
+    from app.models import Transacao, TransacaoExterior, TransacaoCripto, Configuracao
+    from app.services.carteira import (
+        processar_carteira, popular_precos_br, popular_precos_us,
+        popular_precos_cripto, gerar_resumo_darfs,
+    )
+    from calendar import monthrange
+
+    conf = Configuracao.query.filter_by(user_id=current_user.id).first()
+
+    # --- Processa dados (mesma lógica do dashboard) ---
+    transacoes = Transacao.query.filter_by(user_id=current_user.id).order_by(Transacao.id).all()
+    carteira, _, vendas, _ = processar_carteira(transacoes, buscar_cotacao=False)
+    popular_precos_br(carteira)
+    total_investido = sum(v['custo_total'] for v in carteira.values())
+    saldo_br = sum(v['valor_atual'] for v in carteira.values())
+    total_lucro = sum(v.lucro_perda for v in vendas if v.lucro_perda > 0)
+    total_perda = sum(v.lucro_perda for v in vendas if v.lucro_perda < 0)
+    darfs = gerar_resumo_darfs(vendas)
+
+    transacoes_us = TransacaoExterior.query.filter_by(user_id=current_user.id).order_by(TransacaoExterior.id).all()
+    carteira_us, _, vendas_us, _ = processar_carteira(transacoes_us, buscar_cotacao=False)
+    popular_precos_us(carteira_us)
+    total_investido_us = sum(v['custo_total'] for v in carteira_us.values())
+    saldo_us = sum(v['valor_atual'] for v in carteira_us.values())
+
+    transacoes_c = TransacaoCripto.query.filter_by(user_id=current_user.id).order_by(TransacaoCripto.id).all()
+    carteira_c, _, vendas_c, _ = processar_carteira(transacoes_c, buscar_cotacao=False)
+    popular_precos_cripto(carteira_c)
+    total_investido_c = sum(v['custo_total'] for v in carteira_c.values())
+    saldo_c = sum(v['valor_atual'] for v in carteira_c.values())
+
+    # --- Gera PDF ---
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Helvetica', 'B', 18)
+    pdf.cell(0, 14, 'Nexus Trader - Relatorio de Investimentos', new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.set_font('Helvetica', '', 10)
+    pdf.cell(0, 7, f'Gerado em: {date.today().strftime("%d/%m/%Y")}  |  Usuario: {current_user.username}', new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.ln(10)
+
+    # Totais gerais
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.cell(0, 10, 'Resumo Geral', new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font('Helvetica', '', 10)
+    total_geral = saldo_br + saldo_us + saldo_c
+    total_inv_geral = total_investido + total_investido_us + total_investido_c
+    lucro_total = total_lucro + total_perda
+    pdf.cell(0, 7, f'Total Investido: R$ {total_inv_geral:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    pdf.cell(0, 7, f'Valor de Mercado: R$ {total_geral:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    pdf.cell(0, 7, f'Lucro/Prejuizo Realizado: R$ {lucro_total:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(5)
+
+    # Brasil
+    pdf.set_font('Helvetica', 'B', 12)
+    pdf.cell(0, 9, 'Brasil (B3)', new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font('Helvetica', '', 10)
+    pdf.cell(0, 7, f'Investido: R$ {total_investido:,.2f}  |  Mercado: R$ {saldo_br:,.2f}  |  Lucro: R$ {total_lucro:,.2f}  |  Prejuizo: R$ {total_perda:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    if carteira:
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(40, 7, 'Ativo', border=1)
+        pdf.cell(20, 7, 'Qtd', border=1, align='C')
+        pdf.cell(30, 7, 'P.Medio', border=1, align='R')
+        pdf.cell(30, 7, 'Cotacao', border=1, align='R')
+        pdf.cell(30, 7, 'Total', border=1, align='R')
+        pdf.cell(40, 7, 'Rent.', border=1, align='R')
+        pdf.ln()
+        pdf.set_font('Helvetica', '', 9)
+        for codigo, ativo in carteira.items():
+            pdf.cell(40, 6, codigo[:18], border=1)
+            pdf.cell(20, 6, str(ativo['quantidade']), border=1, align='C')
+            pdf.cell(30, 6, f"R$ {ativo['preco_medio']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"R$ {ativo['preco_atual']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"R$ {ativo['valor_atual']:.2f}", border=1, align='R')
+            pdf.cell(40, 6, f"{ativo['rentabilidade_pct']:.2f}%", border=1, align='R')
+            pdf.ln()
+    else:
+        pdf.cell(0, 7, 'Nenhum ativo na carteira.', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(5)
+
+    # Exterior
+    pdf.set_font('Helvetica', 'B', 12)
+    pdf.cell(0, 9, 'Exterior (EUA)', new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font('Helvetica', '', 10)
+    pdf.cell(0, 7, f'Investido: US$ {total_investido_us:,.2f}  |  Mercado: US$ {saldo_us:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    if carteira_us:
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(40, 7, 'Ticker', border=1)
+        pdf.cell(20, 7, 'Qtd', border=1, align='C')
+        pdf.cell(30, 7, 'P.Medio', border=1, align='R')
+        pdf.cell(30, 7, 'Cotacao', border=1, align='R')
+        pdf.cell(30, 7, 'Total', border=1, align='R')
+        pdf.cell(40, 7, 'Rent.', border=1, align='R')
+        pdf.ln()
+        pdf.set_font('Helvetica', '', 9)
+        for codigo, ativo in carteira_us.items():
+            pdf.cell(40, 6, codigo[:18], border=1)
+            pdf.cell(20, 6, str(ativo['quantidade']), border=1, align='C')
+            pdf.cell(30, 6, f"US$ {ativo['preco_medio']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"US$ {ativo['preco_atual']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"US$ {ativo['valor_atual']:.2f}", border=1, align='R')
+            pdf.cell(40, 6, f"{ativo['rentabilidade_pct']:.2f}%", border=1, align='R')
+            pdf.ln()
+    else:
+        pdf.cell(0, 7, 'Nenhum ativo na carteira.', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(5)
+
+    # Cripto
+    pdf.set_font('Helvetica', 'B', 12)
+    pdf.cell(0, 9, 'Criptomoedas', new_x='LMARGIN', new_y='NEXT')
+    pdf.set_font('Helvetica', '', 10)
+    pdf.cell(0, 7, f'Investido: R$ {total_investido_c:,.2f}  |  Mercado: R$ {saldo_c:,.2f}', new_x='LMARGIN', new_y='NEXT')
+    if carteira_c:
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(40, 7, 'Ativo', border=1)
+        pdf.cell(25, 7, 'Qtd', border=1, align='C')
+        pdf.cell(30, 7, 'P.Medio', border=1, align='R')
+        pdf.cell(30, 7, 'Cotacao', border=1, align='R')
+        pdf.cell(30, 7, 'Total', border=1, align='R')
+        pdf.cell(35, 7, 'Rent.', border=1, align='R')
+        pdf.ln()
+        pdf.set_font('Helvetica', '', 9)
+        for codigo, ativo in carteira_c.items():
+            pdf.cell(40, 6, codigo[:18], border=1)
+            qtd_str = f"{ativo['quantidade']:.6f}".rstrip('0').rstrip('.') if isinstance(ativo['quantidade'], float) else str(ativo['quantidade'])
+            pdf.cell(25, 6, qtd_str[:10], border=1, align='C')
+            pdf.cell(30, 6, f"R$ {ativo['preco_medio']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"R$ {ativo['preco_atual']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"R$ {ativo['valor_atual']:.2f}", border=1, align='R')
+            pdf.cell(35, 6, f"{ativo['rentabilidade_pct']:.2f}%", border=1, align='R')
+            pdf.ln()
+    else:
+        pdf.cell(0, 7, 'Nenhum ativo na carteira.', new_x='LMARGIN', new_y='NEXT')
+    pdf.ln(5)
+
+    # DARF
+    pdf.set_font('Helvetica', 'B', 12)
+    pdf.cell(0, 9, 'DARFs Pendentes (Brasil)', new_x='LMARGIN', new_y='NEXT')
+    if darfs:
+        pdf.set_font('Helvetica', 'B', 10)
+        pdf.cell(30, 7, 'Mes/Ano', border=1)
+        pdf.cell(30, 7, 'Lucro', border=1, align='R')
+        pdf.cell(30, 7, 'Imposto', border=1, align='R')
+        pdf.cell(40, 7, 'Vencimento', border=1)
+        pdf.ln()
+        pdf.set_font('Helvetica', '', 9)
+        for d in darfs:
+            pdf.cell(30, 6, d['ano_mes_ordem'][:7], border=1)
+            pdf.cell(30, 6, f"R$ {d['lucro']:.2f}", border=1, align='R')
+            pdf.cell(30, 6, f"R$ {d['imposto']:.2f}", border=1, align='R')
+            pdf.cell(40, 6, d.get('vencimento', '-'), border=1)
+            pdf.ln()
+    else:
+        pdf.cell(0, 7, 'Nenhum DARF pendente.', new_x='LMARGIN', new_y='NEXT')
+
+    pdf.ln(10)
+    pdf.set_font('Helvetica', 'I', 8)
+    pdf.cell(0, 5, 'Este relatorio e uma amostra dos dados cadastrados no Nexus Trader. Consulte seu contador para declaracao oficial.', new_x='LMARGIN', new_y='NEXT', align='C')
+
+    buf = BytesIO()
+    pdf.output(buf)
+    buf.seek(0)
+    response = make_response(buf.read())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=relatorio_nexus_{date.today().isoformat()}.pdf'
+    return response

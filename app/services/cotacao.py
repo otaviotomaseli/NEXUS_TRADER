@@ -8,6 +8,7 @@ Oferece funções para:
 """
 
 import logging
+import threading
 from datetime import datetime, timedelta
 
 import requests
@@ -15,6 +16,29 @@ import yfinance as yf
 
 
 logger = logging.getLogger(__name__)
+
+# Cache de cotações em memória com TTL de 60 segundos
+_cache = {}
+_cache_lock = threading.Lock()
+_cache_ttl = 60
+
+
+def _get_cache(key):
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry and (datetime.now().timestamp() - entry['time']) < _cache_ttl:
+            return entry['value']
+        return None
+
+
+def _set_cache(key, value):
+    with _cache_lock:
+        _cache[key] = {'value': value, 'time': datetime.now().timestamp()}
+
+
+def _limpar_cache():
+    with _cache_lock:
+        _cache.clear()
 
 
 def status_mercado(pais):
@@ -175,13 +199,15 @@ def _fallback_brl(ticker_busca):
 
 def buscar_preco(ticker_busca):
     """
-    Função principal de busca de preço, com fallback entre múltiplas fontes.
+    Função principal de busca de preço, com fallback entre múltiplas fontes
+    e cache em memória (TTL = 60s).
 
     A ordem de consulta é:
-      1. AwesomeAPI (pares -BRL)
-      2. Binance (cripto e pares)
-      3. Yahoo Finance (ações, ETFs, moedas)
-      4. Fallback BRL (cálculo USD * cotação dólar)
+      1. Cache em memória
+      2. AwesomeAPI (pares -BRL)
+      3. Binance (cripto e pares)
+      4. Yahoo Finance (ações, ETFs, moedas)
+      5. Fallback BRL (cálculo USD * cotação dólar)
 
     Retorna o primeiro resultado não-nulo encontrado.
 
@@ -193,24 +219,34 @@ def buscar_preco(ticker_busca):
     """
     ticker_busca = ticker_busca.upper().strip()
 
+    # 0: Verifica cache em memória
+    cache_key = f'preco:{ticker_busca}'
+    cached = _get_cache(cache_key)
+    if cached is not None:
+        return cached
+
     # 1ª tentativa: AwesomeAPI (ideal para pares BRL)
     preco = _awesomeapi_preco(ticker_busca)
     if preco is not None:
+        _set_cache(cache_key, preco)
         return preco
 
     # 2ª tentativa: Binance (ideal para criptomoedas)
     preco = _binance_preco(ticker_busca)
     if preco is not None:
+        _set_cache(cache_key, preco)
         return preco
 
     # 3ª tentativa: Yahoo Finance (ações e ETFs)
     preco = _yfinance_preco(ticker_busca)
     if preco is not None:
+        _set_cache(cache_key, preco)
         return preco
 
     # 4ª tentativa: Fallback matemático BRL
     preco = _fallback_brl(ticker_busca)
     if preco is not None:
+        _set_cache(cache_key, preco)
         return preco
 
     # Nenhuma fonte retornou preço válido
