@@ -1,3 +1,5 @@
+"""Rotas LGPD — privacidade, consentimento, exportação e exclusão de dados."""
+
 import logging
 from datetime import datetime, timezone
 
@@ -13,12 +15,14 @@ lgpd_bp = Blueprint('lgpd', __name__)
 
 @lgpd_bp.route('/privacidade')
 def privacidade():
+    """Exibe a página pública de política de privacidade."""
     return render_template('privacidade.html')
 
 
 @lgpd_bp.route('/lgpd/termos', methods=['POST'])
 @login_required
 def aceitar_termos():
+    """Registra o aceite do usuário aos termos de privacidade (LGPD)."""
     current_user.lgpd_consentimento = True
     current_user.lgpd_consentimento_data = datetime.now(timezone.utc)
     db.session.commit()
@@ -29,6 +33,7 @@ def aceitar_termos():
 @lgpd_bp.route('/lgpd/minha-conta')
 @login_required
 def minha_conta():
+    """Exibe a página de gerenciamento de conta com total de registros armazenados."""
     qtd_transacoes = Transacao.query.filter_by(user_id=current_user.id).count()
     qtd_us = TransacaoExterior.query.filter_by(user_id=current_user.id).count()
     qtd_cripto = TransacaoCripto.query.filter_by(user_id=current_user.id).count()
@@ -39,6 +44,8 @@ def minha_conta():
 @lgpd_bp.route('/lgpd/exportar')
 @login_required
 def exportar_dados():
+    """Exporta todos os dados pessoais do usuário em formato JSON (portabilidade LGPD)."""
+    # Estrutura base com dados do perfil do usuário
     dados = {
         'usuario': {
             'username': current_user.username,
@@ -54,6 +61,7 @@ def exportar_dados():
         'transacoes_cripto': [],
     }
 
+    # Adiciona as configurações fiscais do usuário
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
     if conf:
         dados['configuracao'].append({
@@ -66,6 +74,7 @@ def exportar_dados():
             'taxa_cripto': conf.taxa_cripto,
         })
 
+    # Exporta as transações do mercado brasileiro
     for t in Transacao.query.filter_by(user_id=current_user.id).all():
         dados['transacoes_br'].append({
             'id': t.id, 'tipo_ativo': t.tipo_ativo, 'codigo': t.codigo,
@@ -75,6 +84,7 @@ def exportar_dados():
             'darf': t.darf, 'banco': t.banco,
         })
 
+    # Exporta as transações do exterior (EUA)
     for t in TransacaoExterior.query.filter_by(user_id=current_user.id).all():
         dados['transacoes_us'].append({
             'id': t.id, 'tipo_ativo': t.tipo_ativo, 'codigo': t.codigo,
@@ -84,6 +94,7 @@ def exportar_dados():
             'darf': t.darf, 'banco': t.banco,
         })
 
+    # Exporta as transações de criptomoedas
     for t in TransacaoCripto.query.filter_by(user_id=current_user.id).all():
         dados['transacoes_cripto'].append({
             'id': t.id, 'tipo_ativo': t.tipo_ativo, 'codigo': t.codigo,
@@ -99,17 +110,24 @@ def exportar_dados():
 @lgpd_bp.route('/lgpd/excluir', methods=['POST'])
 @login_required
 def excluir_conta():
+    """Exclui permanentemente a conta e todos os dados associados (direito ao esquecimento LGPD).
+
+    Remove configurações e transações, anonimiza o usuário e encerra a sessão.
+    """
+    # Exige consentimento prévio para prosseguir com a exclusão
     if not current_user.lgpd_consentimento:
         flash('Você precisa aceitar os termos de privacidade antes de gerenciar sua conta.', 'error')
         return redirect(url_for('lgpd.minha_conta'))
 
     uid = current_user.id
 
+    # Remove todos os registros relacionados ao usuário
     Configuracao.query.filter_by(user_id=uid).delete()
     Transacao.query.filter_by(user_id=uid).delete()
     TransacaoExterior.query.filter_by(user_id=uid).delete()
     TransacaoCripto.query.filter_by(user_id=uid).delete()
 
+    # Remove o avatar do disco se existir
     if current_user.avatar:
         import os
         from flask import current_app
@@ -117,6 +135,7 @@ def excluir_conta():
         if os.path.exists(caminho):
             os.remove(caminho)
 
+    # Anonimiza o registro do usuário (não deleta da tabela para integridade referencial)
     current_user.username = f'usuario_excluido_{uid}'
     current_user.password = ''
     current_user.avatar = None
@@ -128,6 +147,7 @@ def excluir_conta():
 
     db.session.commit()
 
+    # Encerra a sessão e redireciona para o login
     logout_user()
     flash('Sua conta e todos os dados associados foram excluídos permanentemente.', 'success')
     return redirect(url_for('auth.login'))

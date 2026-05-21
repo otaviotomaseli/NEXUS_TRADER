@@ -1,3 +1,11 @@
+"""
+Rotas da API de dados financeiros.
+
+Fornece endpoints para cotação em tempo real, análise técnica
+com indicadores (suporte, resistência, médias móveis) e
+histórico de compras do usuário sobreposto ao gráfico.
+"""
+
 import logging
 from datetime import datetime
 
@@ -13,12 +21,15 @@ from app.services.cotacao import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Blueprint com prefixo /api (algumas rotas usam prefixo próprio)
 api_bp = Blueprint('api', __name__)
 
 
 @api_bp.route('/api/cotacao/<ticker>')
 @login_required
 def api_cotacao(ticker):
+    """Retorna a cotação atual de um ativo em formato JSON."""
     preco = buscar_preco(ticker)
     if preco is not None:
         return jsonify({'preco': preco})
@@ -28,10 +39,17 @@ def api_cotacao(ticker):
 @api_bp.route('/api/analise/<pais>/<ticker>/<periodo>')
 @login_required
 def api_analise(pais, ticker, periodo):
+    """
+    Retorna dados de análise técnica de um ativo.
+
+    Inclui preços históricos, suporte, resistência, cruzamento
+    de médias móveis (SMA9/SMA21) e compras do usuário no período.
+    """
     ticker_busca = ticker.upper().strip()
     ticker_db = ticker_busca
 
     try:
+        # Obtém histórico conforme o mercado (Brasil, EUA ou Cripto)
         if pais == 'CRIPTO':
             resultado = buscar_historico_cripto(ticker_busca, periodo)
             if resultado is None:
@@ -46,6 +64,7 @@ def api_analise(pais, ticker, periodo):
         highs = resultado.get('highs', prices)
         lows = resultado.get('lows', prices)
 
+        # Calcula suporte (mínimo) e resistência (máximo) do período
         resistance = round(max(highs), 2)
         support = round(min(lows), 2)
 
@@ -57,6 +76,7 @@ def api_analise(pais, ticker, periodo):
         buy_signals = []
         sell_signals = []
 
+        # Gera sinais de compra/venda no cruzamento das médias SMA9 e SMA21
         if len(prices) > 21:
             for i in range(21, len(prices)):
                 if sma9.iloc[i] > sma21.iloc[i] and sma9.iloc[i - 1] <= sma21.iloc[i - 1]:
@@ -64,7 +84,7 @@ def api_analise(pais, ticker, periodo):
                 elif sma9.iloc[i] < sma21.iloc[i] and sma9.iloc[i - 1] >= sma21.iloc[i - 1]:
                     sell_signals.append({'x': dates[i], 'y': prices[i]})
 
-        # Compras do usuário no período
+        # Compras do usuário no período — consulta modelo adequado por país
         user_purchases = []
         if pais == 'BR':
             compras_bd = Transacao.query.filter_by(
@@ -81,6 +101,7 @@ def api_analise(pais, ticker, periodo):
         else:
             compras_bd = []
 
+        # Converte datas e preços das compras para o formato do gráfico
         for c in compras_bd:
             y, m, d = c.data.split('-')
             data_formatada = f'{d}-{m}-{y}'

@@ -1,3 +1,10 @@
+"""
+Rotas para transações com criptomoedas.
+
+Gerencia compra, venda e exclusão de ativos digitais,
+incluindo cálculo de imposto sobre lucro em vendas.
+"""
+
 import logging
 
 from flask import Blueprint, redirect, url_for, flash, request
@@ -8,12 +15,15 @@ from app.models import TransacaoCripto, Configuracao
 from app.services.imposto import calcular_imposto_venda_cripto
 
 logger = logging.getLogger(__name__)
+
+# Blueprint para agrupar as rotas de criptomoedas
 cripto_bp = Blueprint('cripto', __name__)
 
 
 @cripto_bp.route('/comprar_cripto', methods=['POST'])
 @login_required
 def comprar_cripto():
+    """Registra uma compra de criptomoeda."""
     try:
         qtd = float(request.form.get('quantidade', 0))
         valor = float(request.form.get('valor_compra', 0))
@@ -42,6 +52,7 @@ def comprar_cripto():
 @cripto_bp.route('/vender_cripto', methods=['POST'])
 @login_required
 def vender_cripto():
+    """Registra uma venda de criptomoeda com cálculo de imposto."""
     codigo = request.form.get('codigo', '').strip()
     tipo_ativo = request.form.get('tipo_ativo', '').strip()
     try:
@@ -53,8 +64,10 @@ def vender_cripto():
         flash('Dados inválidos. Verifique quantidade e valor.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
+    # Carrega configurações fiscais do usuário
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
 
+    # Calcula preço médio ponderado (PM) de todas as transações do ativo
     transacoes = TransacaoCripto.query.filter_by(
         user_id=current_user.id, codigo=codigo,
     ).all()
@@ -88,6 +101,7 @@ def vender_cripto():
 @cripto_bp.route('/excluir_cripto/<int:id>')
 @login_required
 def excluir_cripto(id):
+    """Exclui uma transação de criptomoeda desde que pertença ao usuário atual."""
     t = TransacaoCripto.query.get(id)
     if t and t.user_id == current_user.id:
         db.session.delete(t)

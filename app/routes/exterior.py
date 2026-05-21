@@ -1,3 +1,10 @@
+"""
+Rotas para transações no mercado exterior (EUA).
+
+Gerencia compra, venda e exclusão de ativos internacionais,
+incluindo cálculo de imposto sobre lucro em vendas.
+"""
+
 import logging
 
 from flask import Blueprint, redirect, url_for, flash, request
@@ -9,12 +16,16 @@ from app.services.cotacao import mercado_aberto
 from app.services.imposto import calcular_imposto_venda_us
 
 logger = logging.getLogger(__name__)
+
+# Blueprint para agrupar as rotas de exterior
 exterior_bp = Blueprint('exterior', __name__)
 
 
 @exterior_bp.route('/comprar_us', methods=['POST'])
 @login_required
 def comprar_us():
+    """Registra uma compra de ativo no mercado americano."""
+    # Verifica se o mercado dos EUA está aberto
     if not mercado_aberto('US'):
         flash('MERCADO FECHADO: Não é possível comprar nos EUA agora.', 'error')
         return redirect(url_for('brasil.dashboard'))
@@ -47,6 +58,8 @@ def comprar_us():
 @exterior_bp.route('/vender_us', methods=['POST'])
 @login_required
 def vender_us():
+    """Registra uma venda de ativo no mercado americano com cálculo de imposto."""
+    # Verifica se o mercado dos EUA está aberto
     if not mercado_aberto('US'):
         flash('MERCADO FECHADO: Não é possível vender nos EUA agora.', 'error')
         return redirect(url_for('brasil.dashboard'))
@@ -62,8 +75,10 @@ def vender_us():
         flash('Dados inválidos. Verifique quantidade e valor.', 'error')
         return redirect(url_for('brasil.dashboard'))
 
+    # Carrega configurações fiscais do usuário
     conf = Configuracao.query.filter_by(user_id=current_user.id).first()
 
+    # Calcula preço médio ponderado (PM) das compras e vendas anteriores
     transacoes = TransacaoExterior.query.filter_by(
         user_id=current_user.id, codigo=codigo,
     ).all()
@@ -97,6 +112,7 @@ def vender_us():
 @exterior_bp.route('/excluir_us/<int:id>')
 @login_required
 def excluir_us(id):
+    """Exclui uma transação exterior desde que pertença ao usuário atual."""
     t = TransacaoExterior.query.get(id)
     if t and t.user_id == current_user.id:
         db.session.delete(t)
