@@ -105,7 +105,7 @@ Acesse em: **http://localhost:5000**
 
 | Campo | Valor |
 |-------|-------|
-| Usuário | `otavio` |
+| Usuário | `criar um` |
 | Senha | Configurada no `.env` |
 
 > ⚠️ Altere a senha após o primeiro acesso.
